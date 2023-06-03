@@ -6,7 +6,7 @@
         <!-- 防止后端这块写的差，就不循环渲染了 -->
         <!-- 选择物种 -->
         <div class="species-container filter-item">
-          <div class="filter-name">物种名称</div>
+          <div class="filter-name">Species</div>
           <el-select v-model="filter.species" class="filter-select" filterable placeholder="请选择物种">
             <el-option
               label="21"
@@ -16,7 +16,7 @@
         </div>
         <!-- 选择组织 -->
         <div class="tissue-container filter-item">
-          <div class="filter-name">组织名称</div>
+          <div class="filter-name">Tissue</div>
           <el-select v-model="filter.species" class="filter-select" filterable placeholder="请选择组织">
             <el-option
               label="21"
@@ -29,7 +29,7 @@
           <div style="font-size: 20px;margin-bottom: 20px;;">Region</div>
           <div class="chr-filter">
             <div class="chr-item">
-              <span class="chr-name" style="margin-right: 10px;font-size: 20px;">染色体编号</span>
+              <span class="chr-name" style="margin-right: 10px;font-size: 20px;">chr</span>
               <el-select v-model="filter.species" class="filter-select" filterable placeholder="请选择染色体编号">
                 <el-option
                   label="21"

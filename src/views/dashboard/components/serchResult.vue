@@ -6,6 +6,14 @@
 
       <div class="charts-container">
         <div class="tree-branch">
+          <div class="branch-gene-check-container">
+            <div class="main-branch gene-check-main-branch" />
+            <div class="sub-branch gene-check-sub-branch" />
+            <div class="gene-check-container">
+              <GeneCheck />
+            </div>
+            <div class="circle" />
+          </div>
 
           <div class="branch-chromation-container">
             <div class="main-branch main-branch01" />
@@ -42,12 +50,13 @@
 </template>
 
 <script>
+import GeneCheck from './geneCheck.vue'
 import ChrVue from './chr.vue'
 import AbViewerVue from './abViewer.vue'
 import ChromationVue from './chromation.vue'
 export default {
   name: 'Home',
-  components: { ChrVue, AbViewerVue, ChromationVue },
+  components: { ChrVue, AbViewerVue, ChromationVue, GeneCheck },
   methods: {
     returnSearchFilter() {
       this.$emit('returnSearchFilter', false)
@@ -91,11 +100,15 @@ export default {
     transform: translateX(-50%);
   }
 
+  .gene-check-main-branch {
+    height: 60px;
+  }
+
   .main-branch01 {
     height: 50px;
   }
   .main-branch02 {
-    height: 200px;
+    height: 400px;
   }
 
   .circle {
@@ -108,12 +121,28 @@ export default {
     opacity: 0.8;
   }
    .sub-branch {
-    position: absolute;
+      position: absolute;
       height: 2px;
       background: linear-gradient(to left, #fff,#051F2C);
       transform: translateX(-110%);
       opacity: 0.8;
       border-radius: 3px;
+    }
+
+    .branch-gene-check-container {
+      position: relative;
+
+      .gene-check-sub-branch {
+        transform: translateX(30px) rotate(180deg);
+        width: 300px;
+        margin-top: 15px;
+      }
+
+      .gene-check-container {
+        position: absolute;
+        margin-left: 40px;
+        margin-top: 40px;
+      }
     }
 
   .branch-chromation-container {

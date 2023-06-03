@@ -31,10 +31,10 @@
         </div>
       </div>
     </div>
-    <div class="genes-container">
+    <!-- <div class="genes-container">
       <div ref="genes" class="genes" />
       <span class="gene-title">Genes</span>
-    </div>
+    </div> -->
     <div class="switched-peaks-container">
       <div ref="peaks" class="peaks" />
       <span class="peaks-title">Stitched Peaks</span>
@@ -54,7 +54,7 @@ export default {
     this.renderNormalChart('chart2', [[0, 10, 1], [10, 20, 2]])
     this.renderNormalChart('chart3', [[0, 10, 1], [10, 20, 2]])
     this.renderNormalChart('chart4', [[0, 10, 1], [10, 20, 2]])
-    this.renderGenes()
+    // this.renderGenes()
     this.renderPeaks()
   },
   methods: {
@@ -407,7 +407,7 @@ export default {
     border-bottom: 2px solid #999;
     padding-bottom: 20px;
     width: 85%;
-    height: 30px;
+    height: 50px;
     float: right;
   }
   .peaks-title {

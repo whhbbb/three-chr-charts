@@ -35,9 +35,9 @@ export default {
             name: 'Genes',
             desc: 'Gene structures from GENCODE 19',
             bwgURI: '//www.biodalliance.org/datasets/gencode.bb',
-            // stylesheet_uri: '//www.biodalliance.org/stylesheets/gencode.xml',
+            stylesheet_uri: '//www.biodalliance.org/stylesheets/gencode.xml',
             collapseSuperGroups: true,
-            // trixURI: '//www.biodalliance.org/datasets/geneIndex.ix',
+            trixURI: '//www.biodalliance.org/datasets/geneIndex.ix',
             pinned: true
           }
         ]
@@ -49,10 +49,11 @@ export default {
 
 <style scoped lang="scss">
 .svgHolder-container {
-  width: 90%;
-  min-width: 1000px;
+  width: 700px;
+  height: 400px;
   position: relative;
   left: 50%;
-  transform: translateX(-50%)
+  transform: translateX(-50%);
+  background-color: #fff;
 }
 </style>

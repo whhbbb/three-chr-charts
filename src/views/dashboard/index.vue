@@ -1,6 +1,5 @@
 <template>
   <div class="chr-container">
-    <ChrDemo />
     <SearchFilter v-if="!showResults" @submitFliter="submitFliter" />
     <SearchResult v-if="showResults" @returnSearchFilter="returnSearchFilter" />
   </div>
@@ -9,9 +8,8 @@
 <script>
 import SearchFilter from './components/searchFilter.vue'
 import SearchResult from './components/serchResult.vue'
-import ChrDemo from './components/chrDemo.vue'
 export default {
-  components: { SearchFilter, SearchResult, ChrDemo },
+  components: { SearchFilter, SearchResult },
   data() {
     return {
       showResults: false
