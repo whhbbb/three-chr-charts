@@ -33,10 +33,19 @@ module.exports = {
     port: port,
     open: true,
     overlay: {
-      warnings: false,
+      warnings: true,
       errors: true
+    },
+    // 代理配置
+    proxy: {
+      '/dev-api': {
+        target: 'http://192.168.3.34:8082',
+        changeOrigin: true, // 是否跨域
+        pathRewrite: {
+          '^/dev-api': '' // 将/dev-api重写为空
+        }
+      }
     }
-    // before: require('./mock/mock-server.js')
   },
   configureWebpack: {
     // provide the app's title in webpack's name field, so that

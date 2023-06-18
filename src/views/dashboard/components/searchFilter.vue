@@ -3,37 +3,42 @@
     <el-card style="padding: 20px;">
       <div class="title">Filter</div>
       <div class="filter-container">
-        <!-- 防止后端这块写的差，就不循环渲染了 -->
         <!-- 选择物种 -->
         <div class="species-container filter-item">
           <div class="filter-name">Species</div>
           <el-select v-model="filter.species" class="filter-select" filterable placeholder="请选择物种">
             <el-option
-              label="21"
-              value="123"
+              v-for="item in options.species"
+              :key="item.species_ID"
+              :label="item.species_NAME"
+              :value="item.species_ID"
             />
           </el-select>
         </div>
         <!-- 选择组织 -->
         <div class="tissue-container filter-item">
           <div class="filter-name">Tissue</div>
-          <el-select v-model="filter.species" class="filter-select" filterable placeholder="请选择组织">
+          <el-select v-model="filter.cultivar" class="filter-select" filterable placeholder="请选择组织">
             <el-option
-              label="21"
-              value="123"
+              v-for="item in options.cultivar"
+              :key="item.cultivar_ID"
+              :label="item.cultivar_NAME"
+              :value="item.cultivar_ID"
             />
           </el-select>
         </div>
         <!-- 选择染色体 -->
         <div class="chr-container">
-          <div style="font-size: 20px;margin-bottom: 20px;;">Region</div>
+          <div style="font-size: 20px;margin-bottom: 20px;">Region</div>
           <div class="chr-filter">
             <div class="chr-item">
               <span class="chr-name" style="margin-right: 10px;font-size: 20px;">chr</span>
-              <el-select v-model="filter.species" class="filter-select" filterable placeholder="请选择染色体编号">
+              <el-select v-model="filter.chromosome" class="filter-select" filterable placeholder="请选择染色体">
                 <el-option
-                  label="21"
-                  value="123"
+                  v-for="item in options.chromosome"
+                  :key="item.cs_ID"
+                  :label="item.cs_NAME"
+                  :value="item.cs_ID"
                 />
               </el-select>
             </div>
@@ -62,29 +67,65 @@
 </template>
 
 <script>
+import { dropDownSpecies, dropDownCultivar, dropDownChromosome, dropDownCultivarAll, dropDownChromosomeAll } from '@/api/filter-table'
 export default {
   data() {
     return {
       filter: {
         species: '',
-        tissue: '',
-        chrNum: '',
+        cultivar: '',
+        chromosome: '',
         chrStart: '',
         chrEnd: ''
       },
       options: {
         species: [],
-        tissue: [],
-        chrNum: [],
+        cultivar: [],
+        chromosome: [],
         chrStart: [],
         chrEnd: []
       }
     }
   },
+  created() {
+    // 查找下拉框
+    this.allDropDown()
+  },
   methods: {
+    // 查找物种
+    async dropDownSpecies() {
+      const { data } = await dropDownSpecies()
+      this.options.species = data
+    },
+    // 查找组织
+    async dropDownTissue() {
+      if (this.filter.species !== '') {
+        const { data } = await dropDownCultivar(this.filter.species)
+        this.options.cultivar = data
+      } else {
+        const { data } = await dropDownCultivarAll()
+        this.options.cultivar = data
+      }
+    },
+    // 查找染色体
+    async dropDownChromosome() {
+      if (this.filter.species !== '') {
+        const { data } = await dropDownChromosome(this.filter.species)
+        this.options.chromosome = data
+      } else {
+        const { data } = await dropDownChromosomeAll()
+        this.options.chromosome = data
+      }
+    },
+    // 查找所有下拉框
+    allDropDown() {
+      this.dropDownSpecies()
+      this.dropDownTissue()
+      this.dropDownChromosome()
+    },
     clearFilter() {
       this.filter.species = ''
-      this.filter.tissue = ''
+      this.filter.cultivar = ''
       this.filter.chrNum = ''
       this.filter.chrStart = ''
       this.filter.chrEnd = ''

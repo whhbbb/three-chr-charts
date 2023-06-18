@@ -3,36 +3,43 @@
     <div class="title">A/B区室 Compartment</div>
     <img style="height: 30px;object-fit: contain;" src="@/assets/images/color01.gif" alt="" class="color-tips">
     <div ref="chart0" class="chart" style="margin-top:0" />
-    <div ref="chart5" class="chart" />
-    <div ref="chart10" class="chart" />
-    <div ref="chart20" class="chart" />
   </el-card>
 </template>
 
 <script>
+import { compartmentResult } from '@/api/compartment'
 import * as echarts from 'echarts'
 
 export default {
+  props: {
+    filter: {
+      type: Object,
+      default: () => {}
+    }
+  },
+  data() {
+    return {
+      compartment: []
+    }
+  },
   mounted() {
-    this.renderNormalChart('chart0', '0 DPA', [
-      [5, 7.5, 0.01],
-      [7.5, 10, -0.02]
-    ])
-    this.renderNormalChart('chart5', '5 DPA', [
-      [5, 7.5, 0.01],
-      [7.5, 10, -0.02]
-    ])
-    this.renderNormalChart('chart10', '10 DPA', [
-      [5, 7.5, 0.01],
-      [7.5, 10, -0.02]
-    ])
-    this.renderNormalChart('chart20', '20 DPA', [
-      [5, 7.5, 0.01],
-      [7.5, 10, -0.02]
-    ], true)
+    this.renderAllChart()
   },
   methods: {
-    renderNormalChart(refName, dpaNum, data, isLast = false) {
+    async renderAllChart() {
+      const { data } = await compartmentResult(this.filter.chromosome)
+      this.compartment = data
+      const dpa0 = []
+      data.map(item => {
+        const val = []
+        val.push(item.start_POINT)
+        val.push(item.end_POINT)
+        val.push(item.value)
+        dpa0.push(val)
+      })
+      this.renderChart('chart0', '0 DPA', dpa0)
+    },
+    renderChart(refName, dpaNum, data) {
       data = data.map(function(item, index) {
         let color = ''
         if (item[2] < 0) {
@@ -50,11 +57,9 @@ export default {
 
       const option = {
         xAxis: {
-          show: isLast,
           type: 'value',
-          min: 5,
-          max: 25,
-          interval: 2.5,
+          // interval: 2.5,
+          // max: 123400000,
           axisLine: {
             onZero: false,
             lineStyle: {
@@ -69,12 +74,13 @@ export default {
           },
 
           axisLabel: {
-            formatter: function(value, index) {
-              if (value === 25) {
-                return value + '(Mb)' // 在最后一个刻度上添加单位标识
-              }
-              return value
-            }
+            // formatter: function(value, index) {
+            //   console.log('###', value)
+            //   if (value === 10) {
+            //     return value + '(Mb)' // 在最后一个刻度上添加单位标识
+            //   }
+            //   return value
+            // }
           }
 
         },
@@ -92,25 +98,6 @@ export default {
             show: false
           }
         },
-        graphic: [
-          {
-            type: 'text',
-            left: '90%',
-            top: '30px',
-            rotation: Math.PI / 2,
-            style: {
-              text: dpaNum,
-              textAlign: 'center',
-              textVerticalAlign: 'bottom',
-              fill: '#000',
-              fontSize: 14,
-              backgroundColor: '#ccc',
-              padding: 6,
-              borderRadius: 4,
-              lineHeight: 8
-            }
-          }
-        ],
         series: [
           {
             type: 'custom',

@@ -10,7 +10,7 @@
             <div class="main-branch gene-check-main-branch" />
             <div class="sub-branch gene-check-sub-branch" />
             <div class="gene-check-container">
-              <GeneCheck />
+              <GeneCheck :filter="filterData" />
             </div>
             <div class="circle" />
           </div>
@@ -19,7 +19,7 @@
             <div class="main-branch main-branch01" />
             <div class="sub-branch sub-branch01" />
             <div class="chromation-container">
-              <ChromationVue />
+              <ChromationVue :filter="filterData" />
             </div>
             <div class="circle" />
           </div>
@@ -28,7 +28,7 @@
             <div class="main-branch main-branch02" />
             <div class="sub-branch sub-branch02" />
             <div class="chr-container">
-              <ChrVue />
+              <ChrVue :filter="filterData" />
             </div>
             <div class="circle" />
           </div>
@@ -38,7 +38,7 @@
             <div class="circle" />
             <div class="sub-branch sub-branch03" />
             <div class="ab-viewer-container">
-              <AbViewerVue />
+              <AbViewerVue :filter="filterData" />
             </div>
           </div>
 
@@ -50,6 +50,7 @@
 </template>
 
 <script>
+
 import GeneCheck from './geneCheck.vue'
 import ChrVue from './chr.vue'
 import AbViewerVue from './abViewer.vue'
@@ -57,6 +58,19 @@ import ChromationVue from './chromation.vue'
 export default {
   name: 'Home',
   components: { ChrVue, AbViewerVue, ChromationVue, GeneCheck },
+  props: {
+    filterData: {
+      type: Object,
+      default: () => {}
+    }
+  },
+  data() {
+    return {
+      compartment: []
+    }
+  },
+  created() {
+  },
   methods: {
     returnSearchFilter() {
       this.$emit('returnSearchFilter', false)
@@ -70,6 +84,7 @@ export default {
   width: 100%;
   position: relative;
   height: 70vw;
+  min-height: 1800px;
   background-color: #051F2C;
   .main-bg {
     position: absolute;

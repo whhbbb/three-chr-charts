@@ -6,59 +6,32 @@
         <div ref="chart1" class="chart" style="margin-top:0;" />
         <div class="chart-title">
           <div>CHIA-PET</div>
-          <div>loops-rep1</div>
         </div>
       </div>
-      <div class="chart-instance">
-        <div class="chart-title">
-          <div>CHIA-PET</div>
-          <div>peeks-rep1</div>
-        </div>
-        <div ref="chart2" class="chart" />
-      </div>
-      <div class="chart-instance">
-        <div ref="chart3" class="chart" />
-        <div class="chart-title">
-          <div>CHIA-PET</div>
-          <div>loops-rep2</div>
-        </div>
-      </div>
-      <div class="chart-instance">
-        <div ref="chart4" class="chart" />
-        <div class="chart-title">
-          <div>CHIA-PET</div>
-          <div>peeks-rep2</div>
-        </div>
-      </div>
-    </div>
-    <!-- <div class="genes-container">
-      <div ref="genes" class="genes" />
-      <span class="gene-title">Genes</span>
-    </div> -->
-    <div class="switched-peaks-container">
-      <div ref="peaks" class="peaks" />
-      <span class="peaks-title">Stitched Peaks</span>
-    </div>
-    <div class="color-tips">
-      <img src="@/assets/images/color02.gif" alt="">
     </div>
   </div>
 </template>
 
 <script>
 import * as echarts from 'echarts'
+import { loopResult } from '@/api/loop'
 
 export default {
+  props: {
+    filter: {
+      type: Object,
+      default: () => {}
+    }
+  },
   mounted() {
     this.renderNormalChart('chart1', [[5, 10, 5], [10, 20, 5]])
-    this.renderNormalChart('chart2', [[0, 10, 1], [10, 20, 2]])
-    this.renderNormalChart('chart3', [[0, 10, 1], [10, 20, 2]])
-    this.renderNormalChart('chart4', [[0, 10, 1], [10, 20, 2]])
     // this.renderGenes()
     this.renderPeaks()
   },
   methods: {
-    renderPeaks() {
+    async renderPeaks() {
+      const { data: res } = await loopResult(this.filter.chromosome)
+      console.log('@@@@@@@@@@@@@@@', res)
       const colorList = [
         '#4f81bd',
         '#c0504d',
@@ -155,82 +128,6 @@ export default {
 
       echarts.init(this.$refs.peaks).setOption(option)
     },
-    renderGenes() {
-      const data = [
-        [10, 20, 5, 6],
-        [16, 18, 15, 16],
-        [18, 26, 12, 14],
-        [26, 32, 22, 23],
-        [32, 50, 7, 8]
-      ].map(function(item, index) {
-        return {
-          value: item,
-          itemStyle: {
-            color: '#0025C2'
-          }
-        }
-      })
-
-      const option = {
-        xAxis: {
-          type: 'value',
-          min: 0,
-          max: 50
-          // scale: true,
-          // show: false,
-          // axisLabel: {
-          //   show: false // 不显示刻度标签
-          // },
-          // axisTick: {
-          //   // alignWithLabel: true
-          //   show: false
-          // },
-          // splitLine: {
-          //   show: false
-          // }
-        },
-        yAxis: {
-          // show: false,
-          // axisLabel: {
-          //   show: false // 不显示刻度标签
-          // },
-          // axisTick: {
-          //   // alignWithLabel: true
-          //   show: false
-          // },
-          // splitLine: {
-          //   show: false
-          // }
-        },
-        series: [
-          {
-            type: 'custom',
-            renderItem: function(params, api) {
-              var xStart = api.value(0)
-              var xEnd = api.value(1)
-              var yStart = api.value(2)
-              var yEnd = api.value(3)
-              var start = api.coord([xStart, yStart])
-              var size = api.size([xEnd - xStart, yEnd - yStart])
-              var style = api.style()
-              return {
-                type: 'rect',
-                shape: {
-                  x: start[0],
-                  y: start[1],
-                  width: size[0],
-                  height: size[1]
-                },
-                style: style
-              }
-            },
-            data: data
-          }
-        ]
-      }
-
-      echarts.init(this.$refs.genes).setOption(option)
-    },
     renderNormalChart(refName, data) {
       data = data.map(function(item, index) {
         let color = ''
@@ -286,6 +183,15 @@ export default {
         graphic: [],
         series: [
           {
+            type: 'line',
+            smooth: true, // 设置平滑曲线
+            data: [[1, 0], [2, 0]], // 曲线的起始点和终点坐标
+            lineStyle: {
+              color: '#000', // 曲线的颜色
+              width: 2 // 曲线的宽度
+            }
+          },
+          {
             type: 'custom',
             renderItem: function(params, api) {
               var yValue = api.value(2)
@@ -314,8 +220,6 @@ export default {
           }
         ]
       }
-
-      // 使用 ECharts 库渲染图表
       const chart = echarts.init(this.$refs[refName])
       chart.setOption(option)
     }
@@ -374,7 +278,7 @@ export default {
       top: 25%;
 
       div {
-        font-size: 30%;
+        font-size: 12px;
       }
     }
   }
@@ -415,7 +319,7 @@ export default {
     width: 20px;
     top: 30%;
     margin-right: 5px;
-    font-size: 35%;
+    font-size: 12px;
   }
 }
 .color-tips {
