@@ -19,8 +19,30 @@ export const constantRoutes = [
     children: [{
       path: 'dashboard',
       name: 'Dashboard',
-      component: () => import('@/views/dashboard/index'),
-      meta: { title: 'Dashboard', icon: 'dashboard' }
+      component: () => import('@/views/abCompartmentViewers'),
+      meta: { title: 'abViewers', icon: 'dashboard' }
+    }]
+  },
+  {
+    path: '/tadViewers',
+    component: Layout,
+    redirect: '/tadViewers',
+    children: [{
+      path: 'tadViewers',
+      name: 'tadViewers',
+      component: () => import('@/views/tadViewers'),
+      meta: { title: 'tadViewers', icon: 'dashboard' }
+    }]
+  },
+  {
+    path: '/compositionViewers',
+    component: Layout,
+    redirect: '/compositionViewers',
+    children: [{
+      path: 'compositionViewers',
+      name: 'compositionViewers',
+      component: () => import('@/views/compositionViewers'),
+      meta: { title: 'compositionViewers', icon: 'dashboard' }
     }]
   },
   // 404 page must be placed at the end !!!

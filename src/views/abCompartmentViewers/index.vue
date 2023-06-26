@@ -1,7 +1,7 @@
 <template>
   <div class="chr-container">
-    <SearchFilter v-if="!showResults" @submitFliter="submitFliter" />
-    <SearchResult v-if="showResults" :filter-data="filterData" @returnSearchFilter="returnSearchFilter" />
+    <SearchFilter @submitFliter="submitFliter" />
+    <SearchResult ref="charts" :filter-data="filterData" @returnFilter="returnFilter" />
   </div>
 </template>
 
@@ -12,18 +12,16 @@ export default {
   components: { SearchFilter, SearchResult },
   data() {
     return {
-      showResults: false,
       filterData: {},
       compartment: {}
     }
   },
   methods: {
     submitFliter(data) {
+      this.$refs.charts.$refs.charts.makeCharts()
       this.filterData = data
-      this.showResults = true
     },
-    returnSearchFilter() {
-      this.showResults = false
+    makeCharts() {
     }
   }
 }

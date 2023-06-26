@@ -1,7 +1,15 @@
 import request from '@/utils/request'
 
-export function loopResult(id) {
+export function loopResult(id, params) {
   return request({
-    url: `/compartment/cs_id/${id}`
+    url: `/loop/cs_id/${id}`,
+    params
+  })
+}
+
+export function doubleLoopResult(id, params) {
+  return request({
+    url: `/loop/DoubleRange/cs_id/${id}`,
+    params
   })
 }

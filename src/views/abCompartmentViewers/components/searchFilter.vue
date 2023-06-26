@@ -1,12 +1,12 @@
 <template>
   <div class="search-filter-container">
     <el-card style="padding: 20px;">
-      <div class="title">Filter</div>
+      <div class="title">ab区 Compartment</div>
       <div class="filter-container">
         <!-- 选择物种 -->
         <div class="species-container filter-item">
           <div class="filter-name">Species</div>
-          <el-select v-model="filter.species" class="filter-select" filterable placeholder="请选择物种">
+          <el-select v-model="filter.species" class="filter-select" filterable placeholder="请选择物种" @focus="dropDownSpecies">
             <el-option
               v-for="item in options.species"
               :key="item.species_ID"
@@ -18,7 +18,7 @@
         <!-- 选择组织 -->
         <div class="tissue-container filter-item">
           <div class="filter-name">Tissue</div>
-          <el-select v-model="filter.cultivar" class="filter-select" filterable placeholder="请选择组织">
+          <el-select v-model="filter.cultivar" class="filter-select" filterable placeholder="请选择组织" @focus="dropDownTissue">
             <el-option
               v-for="item in options.cultivar"
               :key="item.cultivar_ID"
@@ -33,23 +33,23 @@
           <div class="chr-filter">
             <div class="chr-item">
               <span class="chr-name" style="margin-right: 10px;font-size: 20px;">chr</span>
-              <el-select v-model="filter.chromosome" class="filter-select" filterable placeholder="请选择染色体">
+              <el-select v-model="filter.chromosome" class="filter-select" filterable placeholder="请选择染色体" @focus="dropDownChromosome">
                 <el-option
                   v-for="item in options.chromosome"
                   :key="item.cs_ID"
                   :label="item.cs_NAME"
-                  :value="item.cs_ID"
+                  :value="item.cs_NAME"
                 />
               </el-select>
             </div>
             <div class="chr-item" style="display: flex;">
-              <div class="start-container">
-                <span style="margin-right: 10px;font-size: 20px;">start</span>
+              <div class="start-container" style="display: flex;">
+                <span style="margin-right: 10px;font-size: 20px;line-height: 35px;">start</span>
                 <el-input v-model="filter.chrStart" size="medium" />
               </div>
-              <div class="end-container">
-                <span style="margin:0;color: #ccc;margin: 20px;font-size: 20px;">——</span>
-                <span style="margin-right: 10px;font-size: 20px;">end</span>
+              <div class="end-container" style="display: flex;">
+                <span style="margin:0;color: #ccc;margin: 0 10px;;font-size: 20px;line-height: 35px;">——</span>
+                <span style="margin-right: 10px;font-size: 20px;line-height: 35px;">end</span>
                 <el-input v-model="filter.chrEnd" size="medium" />
               </div>
             </div>
@@ -88,8 +88,6 @@ export default {
     }
   },
   created() {
-    // 查找下拉框
-    this.allDropDown()
   },
   methods: {
     // 查找物种
@@ -117,12 +115,6 @@ export default {
         this.options.chromosome = data
       }
     },
-    // 查找所有下拉框
-    allDropDown() {
-      this.dropDownSpecies()
-      this.dropDownTissue()
-      this.dropDownChromosome()
-    },
     clearFilter() {
       this.filter.species = ''
       this.filter.cultivar = ''
@@ -131,7 +123,15 @@ export default {
       this.filter.chrEnd = ''
     },
     submitFliter() {
-      this.$emit('submitFliter', this.filter)
+      const chrs = this.options.chromosome
+      const filter = this.filter
+      for (let i = 0; i < chrs.length; ++i) {
+        if (chrs[i].cs_NAME === this.filter.chromosome) {
+          filter.chromosome = chrs[i]
+        }
+      }
+      filter.chromosome.cs_ID = 1089
+      this.$emit('submitFliter', filter)
     }
   }
 }
