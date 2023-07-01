@@ -1,5 +1,5 @@
 <template>
-  <el-card v-loading="loading" class="chromation-container">
+  <el-card class="chromation-container">
     <div class="title">染色质环 Loop</div>
     <div class="charts-container" :style="{height: allChartsHeight+100 + 'px'}">
       <div ref="chart" class="chart" style="margin-top:0;" :style="{height: allChartsHeight + 'px'} " />
@@ -11,17 +11,19 @@
         <el-button style="margin-left: 20px;" type="primary" @click="downloadCharts">Download <i class="el-icon-download" /></el-button>
       </div>
       <div class="gene-modes" style="margin-top: 15px">
-        <el-switch
+        <!-- <el-switch
           v-model="geneSelect"
           active-text="Canomical transcript"
           inactive-text="All transcript"
-        />
+        /> -->
       </div>
     </div>
   </el-card>
 </template>
 
 <script>
+/* eslint-disable */
+
 import * as echarts from 'echarts'
 import { loopResult, doubleLoopResult } from '@/api/loop'
 import { geneResult } from '@/api/gene'
@@ -44,12 +46,9 @@ export default {
       geneData: [],
       geneLinks: [],
       loading: true,
-      singleGenes: [[0, 1, 10], [1, 1, 10], [1, 20, 40]], // 直线们 层 开始 结束
-      singleArrows: [[6, 0.3, 1], [25, 0.3, -1], [4, 1.3, 1]], // 箭头们 x y 方向
-      exons: [
-        [0, 1, 30, 440], // 层 开始x 结束x 信息
-        [1, 1, 10, 40]
-      ],
+      singleGenes: [], // 直线们 层 开始 结束
+      singleArrows: [], // 箭头们 x y 方向
+      exons: [], // 层 开始x 结束x 信息
       axiosRange: {
         minX: Infinity,
         maxX: -Infinity
@@ -57,7 +56,6 @@ export default {
     }
   },
   async mounted() {
-    await this.makeCharts()
   },
   methods: {
     // 直角坐标系内绘图网格
@@ -402,7 +400,7 @@ export default {
                 color: '#A34A49',
                 opacity: 0.9,
                 width: 2,
-                curveness: 0.4
+                curveness: 1
               }
             },
             label: {
@@ -437,6 +435,16 @@ export default {
         this.$message.error('请输入正确的宽度')
         return
       }
+      if(this.downloadWidth < 500) {
+       await  this.$confirm('为了确保文字清晰可见，不推荐下载过小的图片。我们建议您选择宽度至少为500px的图片进行下载。如果您点击确定，将为您下载宽度为500px的图片；否则，将下载您当前选择的数据所对应的图片。', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+         this.downloadWidth = 500
+        }).catch(() => { 
+        })
+      }
       const chart = echarts.getInstanceByDom(document.querySelector('.chart'))
       const orginWidth = chart.getWidth()
       const originHeight = chart.getHeight()
@@ -448,7 +456,7 @@ export default {
       this.firstChartHeight = this.firstChartHeight * this.downloadWidth / orginWidth
       await chart.resize({
         width: this.downloadWidth,
-        height: this.downloadWidth / orginWidth * originHeight + 60
+        height: this.downloadWidth / orginWidth * originHeight + 100
       })
       await this.renderNormalChart('chart')
       const img = new Image()
@@ -479,7 +487,7 @@ export default {
       this.singleArrows = []
       this.exons = []
 
-      let res
+      let res = {}
       if (filter.chr2Start === '' || filter.chr2End === '') {
         const range = {
           start: filter.chr1Start,
@@ -501,15 +509,40 @@ export default {
           start: filter.chr2Start,
           end: filter.chr2End
         }
-        const response = await geneResult(filter.chromosome.cs_ID, range1)
-        const res1 = response.data
-        const response2 = await geneResult(filter.chromosome.cs_ID, range2)
-        const res2 = response2.data
-        if (res1 === null && res2 === null) {
-          this.$message('查询不到RNA数据')
+
+        let res1
+        let res2
+
+        try {
+          const response = await geneResult(filter.chromosome.cs_ID, range1)
+          res1 = response.data 
+        } catch (error) {
+          res1 = null
+        }
+
+       try {
+          const response = await geneResult(filter.chromosome.cs_ID, range2)
+          res2 = response.data 
+        } catch (error) {
+          res2 = null
+        }
+       
+        if (res1 === null  && res2 === null) {
+          this.$message.error('查询不到RNA数据')
           return
         }
-        res = [...res1, ...res2]
+
+        if(res1 === null) {
+          res.rnaList = [...res2.rnaList]
+          res.rnaStructureTs = [...res2.rnaStructureTs]
+        } else if(res2 === null) {
+          res.rnaList = [...res1.rnaList]
+          res.rnaStructureTs = [...res1.rnaStructureTs]
+        } else {
+          res.rnaList = [...res1.rnaList,...res2.rnaList]
+          res.rnaStructureTs = [...res1.rnaStructureTs,...res2.rnaStructureTs]
+        }
+
       }
 
       const { rnaList, rnaStructureTs } = res
@@ -519,7 +552,12 @@ export default {
       }
       for (const item of rnaStructureTs) {
         this.exons.push([0, item.start_POINT, item.end_POINT, item.mrna_Name])
-        console.log('dcwscwsd@@@@@@@@', item)
+      }
+
+      const singleGenes = this.singleGenes
+      for(let i=0;i<singleGenes.length;++i) {
+        if(singleGenes[i][1] < this.axiosRange.minX) this.axiosRange.minX = singleGenes[i][1]
+        if(singleGenes[i][2] > this.axiosRange.maxX) this.axiosRange.maxX = this.singleGenes[i][2]
       }
 
       const geneLevels = 1
@@ -527,7 +565,19 @@ export default {
       this.maxYRange = geneLevels === 1 ? 0.8 : geneLevels + 0.6
       this.allChartsHeight = 300 + this.geneHeight
     },
-    async  makeCharts() {
+    async makeCharts() {
+      if(!this.filter.chromosome) {
+        this.$message.error('请填写chr')
+        return
+      }
+      echarts.dispose(document.querySelector('.chart'))
+      this.geneData = []
+      this.geneLinks = []
+      this.singleArrows = []
+      this.singleGenes = []
+      this.exons = []
+      this.axiosRange.minX = Infinity
+      this.axiosRange.maxX = -Infinity
       await this.handleData()
       await this.handleGeneData()
       this.renderNormalChart('chart')

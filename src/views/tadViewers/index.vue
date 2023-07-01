@@ -1,7 +1,7 @@
 <template>
   <div class="chr-container">
     <SearchFilter @submitFliter="submitFliter" />
-    <SearchResult ref="charts" :filter="filter" @returnFilter="returnFilter" />
+    <SearchResult ref="charts" :filter="filter" />
   </div>
 </template>
 
@@ -19,7 +19,9 @@ export default {
   methods: {
     submitFliter(data) {
       this.filter = data
-      this.$refs.charts.$refs.charts.makeCharts()
+      this.$nextTick(() => {
+        this.$refs.charts.$refs.charts.makeCharts()
+      })
     }
   }
 }

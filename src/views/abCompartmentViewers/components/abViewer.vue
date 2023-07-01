@@ -1,8 +1,16 @@
 <template>
-  <el-card v-loading="loading" class="abViewer-container">
+  <el-card class="abViewer-container">
     <div class="title">A/B区室 Compartment</div>
     <img style="height: 30px;object-fit: contain;" src="@/assets/images/color01.gif" alt="" class="color-tips">
-    <div id="chart" ref="chart" class="chart" style="margin-top:0" :style="{height: allChartHeight + 'px'}" />
+    <div class="zoom-tools" style="display: flex;justify-content: flex-end;">
+      <el-button type="primary" icon="el-icon-back" @click="lastRange" />
+      <el-button type="primary" icon="el-icon-right" @click="nextRange" />
+      <el-button icon="el-icon-zoom-in" type="primary" circle @click="zoomIn" />
+      <el-button icon="el-icon-zoom-out" type="primary" circle @click="zoomOut" />
+    </div>
+    <div v-loading="loading" class="">
+      <div id="chart" ref="chart" class="chart" style="margin-top:0;" :style="{height: allChartHeight + 'px'}" />
+    </div>
     <div class="tools-container" style="margin-top: 25px;">
       <div class="download-container">
         <span>下载宽度：</span>
@@ -10,11 +18,11 @@
         <el-button style="margin-left: 20px;" type="primary" @click="downloadCharts">Download <i class="el-icon-download" /></el-button>
       </div>
       <div class="gene-modes" style="margin-top: 15px">
-        <el-switch
+        <!-- <el-switch
           v-model="geneSelect"
           active-text="Canomical transcript"
           inactive-text="All transcript"
-        />
+        /> -->
       </div>
     </div>
   </el-card>
@@ -23,6 +31,7 @@
 <script>
 import { compartmentResult } from '@/api/compartment'
 import * as echarts from 'echarts'
+import { geneResult } from '@/api/gene'
 
 export default {
   props: {
@@ -33,6 +42,10 @@ export default {
   },
   data() {
     return {
+      xAxiosRange: {
+        minX: Infinity,
+        maxX: -Infinity
+      },
       firstChartHeight: 160,
       downloadWidth: '',
       geneSelect: true,
@@ -42,17 +55,10 @@ export default {
       // 最大的y
       maxYRange: 1.6, // 动态调整为最大的+0.6
       geneHeight: 200, // 动态调整为 100 * 个数
-      singleGenes: [[0, 1, 10], [1, 1, 10], [1, 20, 40]], // 直线们
-      singleArrows: [[6, 0.3, 1], [25, 0.3, -1], [4, 1.3, 1]], // 箭头们
-      exons: [
-        [0, 1, 30, 440],
-        [1, 1, 10, 40]
-      ],
-      xAxiosRange: {}
+      singleGenes: [], // 直线们 （层数 开始x 结束x
+      singleArrows: [], // 箭头们 ( x 层数+0.3（从0开始 方向
+      exons: [] // 层数 开始 结束 信息
     }
-  },
-  mounted() {
-    this.makeCharts()
   },
   methods: {
     // 画上边的图
@@ -198,7 +204,7 @@ export default {
             silent: true,
             rotation: direction,
             shape: {
-              pathData: 'M0,0 L10,0 L5,10 Z' // 箭头的路径坐标
+              pathData: 'M0,0 L8,0 L4,8 Z' // 箭头的路径坐标
             },
             style: {
               fill: '#000' // 箭头的填充颜色
@@ -267,7 +273,7 @@ export default {
             style: style
           }
         },
-        dimensions: ['name', 'start', 'end', 'value'],
+        dimensions: [exon[1], exon[2], exon[3]],
         encode: {
           x: [1, 2],
           y: 0,
@@ -294,19 +300,17 @@ export default {
       }, opt || {}, true)
     },
     // 处理数据
-    async handleData() {
-      console.log('开始处理数据')
+    async handleData(filter) {
       this.compartment = []
       this.loading = true
       const range = {
-        start: this.filter.chrStart,
-        end: this.filter.chrEnd
+        start: filter.chrStart,
+        end: filter.chrEnd
       }
-      console.log(this.filter)
 
-      const { data } = await compartmentResult(this.filter.chromosome.cs_ID, range)
+      let { data } = await compartmentResult(filter.chromosome.cs_ID, range)
       if (data == null) {
-        this.$message.error('查询不到数据')
+        data = []
         return
       }
       // 处理每一个节点
@@ -320,7 +324,7 @@ export default {
       })
 
       let minVal = Infinity
-      const maxVal = -Infinity
+      let maxVal = -Infinity
       const compartment = this.compartment
       for (let i = 0; i < compartment.length; ++i) {
         if (compartment[i][0] < minVal) {
@@ -330,15 +334,80 @@ export default {
           minVal = compartment[i][1]
         }
         if (compartment[i][0] > maxVal) {
-          minVal = compartment[i][0]
+          maxVal = compartment[i][0]
         }
         if (compartment[i][1] > minVal) {
-          minVal = compartment[i][1]
+          maxVal = compartment[i][1]
         }
       }
 
       this.xAxiosRange.minX = minVal
       this.xAxiosRange.maxX = maxVal
+    },
+    // 处理基因数据
+    async handleGeneData(filter) {
+      /* eslint-disable */
+      this.singleGenes = []
+      this.singleArrows = []
+      this.exons = []
+
+      let res
+      const range = {
+        start: filter.chrStart,
+        end: filter.chrEnd
+      }
+      let response = {data:{}}
+      try {
+        response = await geneResult(filter.chromosome.cs_ID, range)
+        const { data } = response
+        if (data === null) {
+          response.data = {rnaList:[],rnaStructureTs:[]}
+      }
+      } catch (error) {
+        response.data = {rnaList:[],rnaStructureTs:[]}
+      }
+      
+     
+      res = response.data
+      const { rnaList, rnaStructureTs } = res
+      if(rnaList.length === 0 && rnaStructureTs.length === 0) {
+        this.loading = false
+        this.$message('该区域暂无数据')
+      }
+      for (const item of rnaList) {
+        this.singleGenes.push([0, item.start_POINT, item.end_POINT])
+        this.singleArrows.push([(item.start_POINT + item.end_POINT) / 2, 0.3, item.direction === 0 ? -1 : 1])
+      }
+      for (const item of rnaStructureTs) {
+        this.exons.push([0, item.start_POINT, item.end_POINT, item.mrna_Name])
+      }
+
+      const geneLevels = 1
+      this.geneHeight = 100 * geneLevels
+      this.maxYRange = geneLevels === 1 ? 0.8 : geneLevels + 0.6
+      this.allChartsHeight = 300 + this.geneHeight
+
+      let minVal = Infinity
+      let maxVal = -Infinity
+  
+      for (let i = 0; i < rnaList.length; ++i) {
+        if (rnaList[i].start_POINT < minVal) {
+          minVal = rnaList[i].start_POINT
+        }
+        if (rnaList[i].end_POINT < minVal) {
+          minVal = rnaList[i].end_POINT
+        }
+        if (rnaList[i].start_POINT > maxVal) {
+          maxVal = rnaList[i].start_POINT
+        }
+        if (rnaList[i].end_POINT  > minVal) {
+          maxVal = rnaList[i].end_POINT
+        }
+      }
+
+      if(minVal < this.xAxiosRange.minX) this.xAxiosRange.minX = minVal
+      if(maxVal > this.xAxiosRange.maxX) this.xAxiosRange.maxX = maxVal
+
     },
     // 渲染图
     renderChart(refName) {
@@ -347,7 +416,22 @@ export default {
       const option = {
         animation: false,
         // 工具栏
-        tooltip: {},
+          tooltip: {
+          formatter: function(params) {
+            if (params.componentSubType === 'custom') {
+              const infos = params.dimensionNames
+              let tooltipContent = '<div style="text-align: left;">'
+              tooltipContent += '<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: pink; margin-right: 5px;"></span>'
+              tooltipContent += 'start: ' + infos[0] + 'Mb<br>'
+              tooltipContent += '<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: blue; margin-right: 5px;"></span>'
+              tooltipContent += 'end: ' + infos[1]
+              tooltipContent += 'Mb</div>'
+              tooltipContent += '<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: pink; margin-right: 5px;"></span>'
+              tooltipContent += 'name: ' + infos[2] + '<br>'
+              return tooltipContent
+            }
+          }
+        },
         // 直角坐标系内绘图网格
         grid: [
           this.makeGrid(40, this.firstChartHeight),
@@ -356,6 +440,8 @@ export default {
         xAxis: [
           {
             gridIndex: 0,
+            min: vm.xAxiosRange.minX,
+            max: vm.xAxiosRange.maxX,
             type: 'value',
             axisLabel: {
               formatter: '{value} Mb' // 替换 '单位' 为你想要的实际单位
@@ -369,6 +455,8 @@ export default {
           },
           {
             gridIndex: 1,
+            min: vm.xAxiosRange.minX,
+            max: vm.xAxiosRange.maxX,
             type: 'value',
             axisLabel: {
               formatter: '{value} Mb' // 替换 '单位' 为你想要的实际单位
@@ -475,9 +563,97 @@ export default {
       this.loading = false
     },
     // 绘图
-    async makeCharts() {
-      await this.handleData()
+    resetMinAndMax(min,max) {
+      min = Math.floor(Number(min)) 
+      max = Math.floor(Number(max)) 
+      if(min < Number(this.filter.chrStart)) {
+        min = Math.floor(this.filter.chrStart)
+        console.log('中标')
+      } 
+      if(max > Number(this.filter.chrEnd) ) {
+        max = Math.floor(this.filter.chrEnd) 
+        console.log('中标')
+      }
+      return [Number(min),Number(max)]
+    },
+    async makeCharts(filter) {
+      console.log('现在是：', filter.chrStart,'-',filter.chrEnd)
+      echarts.dispose(document.querySelector('.chart'))
+      await this.handleData(filter)
+      await this.handleGeneData(filter)
       this.renderChart('chart')
+    },
+    // 那堆缩放事件
+    // 上一个范围 （左滑）
+    async lastRange() {
+      if(this.xAxiosRange.minX *1000000 == this.filter.chrStart ) return
+      const rangeLength = this.xAxiosRange.maxX - this.xAxiosRange.minX
+      let nextMaxX = this.xAxiosRange.minX
+      let nextMinX = nextMaxX - rangeLength
+      let min = Math.floor(nextMinX * 1000000) 
+      let max = Math.floor(nextMaxX * 1000000) 
+      min = this.resetMinAndMax(min,max)[0]
+      max = this.resetMinAndMax(min,max)[1]
+      const filter = Object.assign({}, this.filter)
+      filter.chrStart = min 
+      filter.chrEnd = max 
+      this.xAxiosRange.minX= min / 1000000
+      this.xAxiosRange.maxX = max / 1000000
+      await this.makeCharts(filter)
+    },
+    // 下一个范围 （右滑）
+    async nextRange() {
+      if(this.xAxiosRange.maxX *1000000 == this.filter.chrEnd ) return
+
+      const rangeLength = this.xAxiosRange.maxX - this.xAxiosRange.minX
+      let nextMinX = this.xAxiosRange.maxX 
+      let nextMaxX = nextMinX  + rangeLength
+
+      let min = Math.floor(this.resetMinAndMax(nextMinX*1000000,nextMaxX*1000000)[0]) 
+      let max = Math.floor(this.resetMinAndMax(nextMinX*1000000,nextMaxX*1000000)[1]) 
+      const filter = Object.assign({}, this.filter) 
+      filter.chrStart = min
+      filter.chrEnd = max
+      this.xAxiosRange.minX= min / 1000000
+      this.xAxiosRange.maxX = max / 1000000
+      await this.makeCharts(filter)
+    },
+    // 放大
+    async zoomIn() {
+      const mid = (this.xAxiosRange.minX + this.xAxiosRange.maxX) / 2
+      const rangeLength = this.xAxiosRange.maxX - this.xAxiosRange.minX
+      const newRangeLength = rangeLength * 0.6
+      const nextMinX = mid - newRangeLength/2
+      const nextMaxX =  mid + newRangeLength/2
+      let min = Math.floor(nextMinX * 1000000) 
+      let max = Math.ceil(nextMaxX * 1000000) 
+      min = this.resetMinAndMax(min,max)[0]
+      max = this.resetMinAndMax(min,max)[1]
+      const filter = Object.assign({}, this.filter)
+      filter.chrStart = min
+      filter.chrEnd = max
+      this.xAxiosRange.minX= nextMinX 
+      this.xAxiosRange.maxX = nextMaxX 
+      await this.makeCharts(filter)
+    },
+    // 缩小
+    async zoomOut() {
+      const mid = (this.xAxiosRange.minX*1000000 + this.xAxiosRange.maxX*1000000) / 2
+      const rangeLength = this.xAxiosRange.maxX*1000000 - this.xAxiosRange.minX*1000000
+      const newRangeLength = rangeLength * 1.4
+      const nextMinX = mid - newRangeLength/2
+      const nextMaxX =  mid + newRangeLength/2
+      let min = nextMinX 
+      let max = nextMaxX
+      min = this.resetMinAndMax(min,max)[0]
+      max = this.resetMinAndMax(min,max)[1]
+      const filter = Object.assign({}, this.filter)
+      filter.chrStart = min
+      filter.chrEnd = max
+      this.xAxiosRange.minX= min / 1000000
+      this.xAxiosRange.maxX = max / 1000000
+      console.log('缩完是：', min,'-',max)
+      await this.makeCharts(filter)
     }
   }
 }

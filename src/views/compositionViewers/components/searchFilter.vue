@@ -32,7 +32,7 @@
           <div style="font-size: 20px;margin-bottom: 20px;">Region</div>
           <div class="chr-filter">
             <div class="chr-item">
-              <span class="chr-name" style="margin-right: 10px;font-size: 20px;">chr1</span>
+              <span class="chr-name" style="margin-right: 10px;font-size: 20px;">chr</span>
               <el-select v-model="filter.chromosome" class="filter-select" filterable placeholder="请选择染色体" @focus="dropDownChromosome">
                 <el-option
                   v-for="item in options.chromosome"
@@ -108,11 +108,13 @@ export default {
   methods: {
     // 查找物种
     async dropDownSpecies() {
+      this.options.species = []
       const { data } = await dropDownSpecies()
       this.options.species = data
     },
     // 查找组织
     async dropDownTissue() {
+      this.options.cultivar = []
       if (this.filter.species !== '') {
         const { data } = await dropDownCultivar(this.filter.species)
         this.options.cultivar = data
@@ -123,6 +125,7 @@ export default {
     },
     // 查找染色体
     async dropDownChromosome() {
+      this.options.chromosome = []
       if (this.filter.species !== '') {
         const { data } = await dropDownChromosome(this.filter.species)
         this.options.chromosome = data
@@ -135,6 +138,7 @@ export default {
       this.filter.species = ''
       this.filter.cultivar = ''
       this.filter.chrNum = ''
+      this.filter.chromosome = ''
       this.filter.chrStart = ''
       this.filter.chrEnd = ''
     },
@@ -146,7 +150,6 @@ export default {
           filter.chromosome = chrs[i]
         }
       }
-      filter.chromosome.cs_ID = 1089
       this.$emit('submitFliter', filter)
     }
   }

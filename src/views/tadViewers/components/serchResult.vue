@@ -2,7 +2,7 @@
   <div class="main-bfc-container">
     <div class="chr-main-container" :style="{minHeight: minHeight}">
       <div class="charts-container">
-        <tadViewers ref="charts" :filter="filter" @returnFilter="returnFilter" />
+        <tadViewers ref="charts" :filter="filter" />
       </div>
     </div>
   </div>
@@ -45,9 +45,6 @@ export default {
   left: 50%;
   transform: translateX(-50%);
   padding-top: 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 </style>

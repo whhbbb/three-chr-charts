@@ -2,7 +2,7 @@
   <div class="main-bfc-container">
     <div class="chr-main-container" :style="{minHeight: minHeight}">
       <div class="charts-container">
-        <ChromationLoop ref="charts" :filter="filterData" @returnFilter="returnFilter" />
+        <ChromationLoop ref="charts" :filter="filterData" />
       </div>
     </div>
   </div>

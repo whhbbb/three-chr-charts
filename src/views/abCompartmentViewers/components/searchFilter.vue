@@ -118,19 +118,35 @@ export default {
     clearFilter() {
       this.filter.species = ''
       this.filter.cultivar = ''
+      this.chromosome = ''
       this.filter.chrNum = ''
       this.filter.chrStart = ''
       this.filter.chrEnd = ''
     },
     submitFliter() {
-      const chrs = this.options.chromosome
       const filter = this.filter
+      if (filter.chromosome === '') {
+        this.$message.error('请先选择chr')
+        return
+      }
+      if (filter.chrStart === '') {
+        this.$message.error('请填写start')
+        return
+      }
+      if (filter.chrEnd === '') {
+        this.$message.error('请填写end')
+        return
+      }
+      if (Number(filter.chrStart) >= Number(filter.chrEnd)) {
+        this.$message.error('start不得大于或等于end')
+        return
+      }
+      const chrs = this.options.chromosome
       for (let i = 0; i < chrs.length; ++i) {
         if (chrs[i].cs_NAME === this.filter.chromosome) {
           filter.chromosome = chrs[i]
         }
       }
-      filter.chromosome.cs_ID = 1089
       this.$emit('submitFliter', filter)
     }
   }

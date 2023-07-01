@@ -92,11 +92,13 @@ export default {
   methods: {
     // 查找物种
     async dropDownSpecies() {
+      this.options.species = []
       const { data } = await dropDownSpecies()
       this.options.species = data
     },
     // 查找组织
     async dropDownTissue() {
+      this.options.cultivar = []
       if (this.filter.species !== '') {
         const { data } = await dropDownCultivar(this.filter.species)
         this.options.cultivar = data
@@ -107,6 +109,7 @@ export default {
     },
     // 查找染色体
     async dropDownChromosome() {
+      this.options.chromosome = []
       if (this.filter.species !== '') {
         const { data } = await dropDownChromosome(this.filter.species)
         this.options.chromosome = data

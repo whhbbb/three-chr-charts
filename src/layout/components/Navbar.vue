@@ -1,33 +1,43 @@
 <template>
-  <div class="navbar">
-    <hamburger :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
+  <div class="container">
+    <div class="navbar">
+      <hamburger :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
 
-    <breadcrumb class="breadcrumb-container" />
+      <breadcrumb class="breadcrumb-container" />
 
-    <!-- <div class="right-menu">
-      <el-dropdown class="avatar-container" trigger="click">
-        <div class="avatar-wrapper">
-          <img :src="avatar+'?imageView2/1/w/80/h/80'" class="user-avatar">
-          <i class="el-icon-caret-bottom" />
-        </div>
-        <el-dropdown-menu slot="dropdown" class="user-dropdown">
-          <router-link to="/">
-            <el-dropdown-item>
-              Home
+      <!-- <div class="right-menu">
+        <el-dropdown class="avatar-container" trigger="click">
+          <div class="avatar-wrapper">
+            <img :src="avatar+'?imageView2/1/w/80/h/80'" class="user-avatar">
+            <i class="el-icon-caret-bottom" />
+          </div>
+          <el-dropdown-menu slot="dropdown" class="user-dropdown">
+            <router-link to="/">
+              <el-dropdown-item>
+                Home
+              </el-dropdown-item>
+            </router-link>
+            <a target="_blank" href="https://github.com/PanJiaChen/vue-admin-template/">
+              <el-dropdown-item>Github</el-dropdown-item>
+            </a>
+            <a target="_blank" href="https://panjiachen.github.io/vue-element-admin-site/#/">
+              <el-dropdown-item>Docs</el-dropdown-item>
+            </a>
+            <el-dropdown-item divided @click.native="logout">
+              <span style="display:block;">Log Out</span>
             </el-dropdown-item>
-          </router-link>
-          <a target="_blank" href="https://github.com/PanJiaChen/vue-admin-template/">
-            <el-dropdown-item>Github</el-dropdown-item>
-          </a>
-          <a target="_blank" href="https://panjiachen.github.io/vue-element-admin-site/#/">
-            <el-dropdown-item>Docs</el-dropdown-item>
-          </a>
-          <el-dropdown-item divided @click.native="logout">
-            <span style="display:block;">Log Out</span>
-          </el-dropdown-item>
-        </el-dropdown-menu>
-      </el-dropdown>
-    </div> -->
+          </el-dropdown-menu>
+        </el-dropdown>
+      </div> -->
+    </div>
+
+    <div class="hanberger-navs">
+      <div class="hanberger-nav-item">123 <span @click="closeItem"><i class="el-icon-close" /></span>
+      </div>
+      <div class="hanberger-nav-item">123</div>
+      <div class="hanberger-nav-item">123</div>
+    </div>
+
   </div>
 </template>
 
@@ -54,6 +64,8 @@ export default {
     async logout() {
       await this.$store.dispatch('user/logout')
       this.$router.push(`/login?redirect=${this.$route.fullPath}`)
+    },
+    closeItem() {
     }
   }
 }
@@ -133,6 +145,25 @@ export default {
           font-size: 12px;
         }
       }
+    }
+  }
+}
+
+.hanberger-navs {
+  width: 100%;
+  height: 50px;
+  background: pink;
+  display: flex;
+  align-items: center;
+
+  .hanberger-nav-item {
+    border: 1px solid #999;
+    height: 38px;
+    line-height: 38px;
+    margin-right: 15px;
+    padding: 0 10px;
+    &:nth-of-type(1) {
+      margin-left: 20px;
     }
   }
 }
