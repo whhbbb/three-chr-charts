@@ -30,13 +30,14 @@
         </el-dropdown>
       </div> -->
     </div>
-
-    <div class="hanberger-navs">
+    <!-- <div class="hanberger-navs">
       <div class="hanberger-nav-item">123 <span @click="closeItem"><i class="el-icon-close" /></span>
       </div>
-      <div class="hanberger-nav-item">123</div>
-      <div class="hanberger-nav-item">123</div>
-    </div>
+      <div class="hanberger-nav-item">123 <span @click="closeItem"><i class="el-icon-close" /></span>
+      </div>
+      <div class="hanberger-nav-item">123 <span @click="closeItem"><i class="el-icon-close" /></span>
+      </div>
+    </div> -->
 
   </div>
 </template>
@@ -149,22 +150,22 @@ export default {
   }
 }
 
-.hanberger-navs {
-  width: 100%;
-  height: 50px;
-  background: pink;
-  display: flex;
-  align-items: center;
+// .hanberger-navs {
+//   width: 100%;
+//   height: 50px;
+//   background: pink;
+//   display: flex;
+//   align-items: center;
 
-  .hanberger-nav-item {
-    border: 1px solid #999;
-    height: 38px;
-    line-height: 38px;
-    margin-right: 15px;
-    padding: 0 10px;
-    &:nth-of-type(1) {
-      margin-left: 20px;
-    }
-  }
-}
+//   .hanberger-nav-item {
+//     border: 1px solid #999;
+//     height: 38px;
+//     line-height: 38px;
+//     margin-right: 15px;
+//     padding: 0 10px;
+//     &:nth-of-type(1) {
+//       margin-left: 20px;
+//     }
+//   }
+// }
 </style>

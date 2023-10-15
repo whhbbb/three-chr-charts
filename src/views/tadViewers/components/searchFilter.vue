@@ -15,15 +15,39 @@
             />
           </el-select>
         </div>
-        <!-- 选择组织 -->
-        <div class="tissue-container filter-item">
-          <div class="filter-name">Tissue</div>
-          <el-select v-model="filter.cultivar" class="filter-select" filterable placeholder="请选择组织" @focus="dropDownTissue">
+        <!-- 选择品种 -->
+        <div class="cultivar-container filter-item">
+          <div class="filter-name">Cultivar</div>
+          <el-select v-model="filter.cultivar" class="filter-select" filterable placeholder="请选择品种" @focus="dropDownCultivar">
             <el-option
               v-for="item in options.cultivar"
               :key="item.cultivar_ID"
               :label="item.cultivar_NAME"
               :value="item.cultivar_ID"
+            />
+          </el-select>
+        </div>
+        <!-- 选择组织 -->
+        <div class="tissue-container filter-item">
+          <div class="filter-name">Tissue</div>
+          <el-select v-model="filter.tissue" class="filter-select" filterable placeholder="请选择组织" @focus="dropDownTissue">
+            <el-option
+              v-for="item in options.tissue"
+              :key="item.tissue_ID"
+              :label="item.tissue_NAME"
+              :value="item.tissue_ID"
+            />
+          </el-select>
+        </div>
+        <!-- 选择software -->
+        <div class="software-container filter-item">
+          <div class="filter-name">Software</div>
+          <el-select v-model="filter.software" class="filter-select" filterable placeholder="请选择software" @focus="dropDownSoftware">
+            <el-option
+              v-for="item in options.software"
+              :key="item.software_ID"
+              :label="item.software_NAME"
+              :value="item.software_ID"
             />
           </el-select>
         </div>
@@ -33,7 +57,7 @@
           <div class="chr-filter">
             <div class="chr-item">
               <span class="chr-name" style="margin-right: 10px;font-size: 20px;">chr</span>
-              <el-select v-model="filter.chromosome" class="filter-select" filterable placeholder="请选择染色体" @focus="dropDownChromosome">
+              <el-select v-model="filter.chr1" class="filter-select" filterable placeholder="请选择染色体" @focus="dropDownChromosome">
                 <el-option
                   v-for="item in options.chromosome"
                   :key="item.cs_ID"
@@ -45,12 +69,12 @@
             <div class="chr-item" style="display: flex;">
               <div class="start-container" style="display: flex;">
                 <span style="margin-right: 10px;font-size: 20px;line-height: 35px;">start</span>
-                <el-input v-model="filter.chrStart" size="medium" />
+                <el-input v-model="filter.chrStart" size="medium" style="width: 180px;" />
               </div>
               <div class="end-container" style="display: flex;">
                 <span style="margin:0;color: #ccc;margin: 0 10px;;font-size: 20px;line-height: 35px;">——</span>
                 <span style="margin-right: 10px;font-size: 20px;line-height: 35px;">end</span>
-                <el-input v-model="filter.chrEnd" size="medium" />
+                <el-input v-model="filter.chrEnd" size="medium" style="width: 180px;" />
               </div>
             </div>
           </div>
@@ -59,7 +83,7 @@
       <div class="footer">
         <div class="footer-items">
           <el-button style="margin-right: 25px;width: 130px;" @click="clearFilter">重置 <i class="el-icon-refresh-right" /></el-button>
-          <el-button type="primary" style="width: 130px;" @click="submitFliter()">提交 <i class="el-icon-check" /></el-button>
+          <el-button type="primary" style="width: 130px;" @click="submitFliter">提交 <i class="el-icon-check" /></el-button>
         </div>
       </div>
     </el-card>
@@ -67,20 +91,24 @@
 </template>
 
 <script>
-import { dropDownSpecies, dropDownCultivar, dropDownChromosome, dropDownCultivarAll, dropDownChromosomeAll } from '@/api/filter-table'
+import { dropDownSpecies, dropDownCultivar, dropDownChromosome, dropDownCultivarAll, dropDownChromosomeAll, dropDownTissue, dropDownSoftwareAll } from '@/api/filter-table'
 export default {
   data() {
     return {
       filter: {
         species: '',
         cultivar: '',
-        chromosome: '',
+        tissue: '',
+        software: '',
+        chr1: '',
         chrStart: '',
         chrEnd: ''
       },
       options: {
         species: [],
         cultivar: [],
+        tissue: [],
+        software: [],
         chromosome: [],
         chrStart: [],
         chrEnd: []
@@ -98,6 +126,14 @@ export default {
     },
     // 查找组织
     async dropDownTissue() {
+      this.options.tissue = []
+      if (this.filter.cultivar !== '') {
+        const { data } = await dropDownTissue(this.filter.cultivar)
+        this.options.tissue = data
+      }
+    },
+    // 查找品种
+    async dropDownCultivar() {
       this.options.cultivar = []
       if (this.filter.species !== '') {
         const { data } = await dropDownCultivar(this.filter.species)
@@ -107,11 +143,16 @@ export default {
         this.options.cultivar = data
       }
     },
+    // 查找software
+    async dropDownSoftware() {
+      const { data } = await dropDownSoftwareAll()
+      this.options.software = data
+    },
     // 查找染色体
     async dropDownChromosome() {
       this.options.chromosome = []
       if (this.filter.species !== '') {
-        const { data } = await dropDownChromosome(this.filter.species)
+        const { data } = await dropDownChromosome(this.filter.cultivar)
         this.options.chromosome = data
       } else {
         const { data } = await dropDownChromosomeAll()
@@ -121,19 +162,38 @@ export default {
     clearFilter() {
       this.filter.species = ''
       this.filter.cultivar = ''
-      this.filter.chrNum = ''
+      this.filter.tissue = ''
+      this.filter.software = ''
+      this.filter.chr1 = ''
       this.filter.chrStart = ''
       this.filter.chrEnd = ''
     },
     submitFliter() {
       const chrs = this.options.chromosome
-      const filter = this.filter
+      const cultivars = this.options.cultivar
+      const softwares = this.options.software
+      const tissues = this.options.tissue
+      const filter = JSON.parse(JSON.stringify(this.filter)) // 修改了const filter = this.filter
       for (let i = 0; i < chrs.length; ++i) {
-        if (chrs[i].cs_NAME === this.filter.chromosome) {
-          filter.chromosome = chrs[i]
+        if (chrs[i].cs_NAME === this.filter.chr1) {
+          filter.chr1 = chrs[i]
         }
       }
-      filter.chromosome.cs_ID = 1089
+      for (let i = 0; i < cultivars.length; ++i) {
+        if (cultivars[i].cultivar_ID === this.filter.cultivar) {
+          filter.cultivar = cultivars[i]
+        }
+      }
+      for (let i = 0; i < softwares.length; ++i) {
+        if (softwares[i].software_ID === this.filter.software) {
+          filter.software = softwares[i]
+        }
+      }
+      for (let i = 0; i < tissues.length; ++i) {
+        if (tissues[i].tissue_ID === this.filter.tissue) {
+          filter.tissue = tissues[i]
+        }
+      }
       this.$emit('submitFliter', filter)
     }
   }
@@ -165,11 +225,12 @@ $lightBlue: #dfeef5;
 .filter-container {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   background-color: $lightBlue;
   margin: 20px 0;
   padding: 30px;
   .filter-item{
-    width: 50%;
+    // width: 50%;
     .filter-name {
       margin-bottom: 7px;
       font-size: 20px;
@@ -182,6 +243,9 @@ $lightBlue: #dfeef5;
     border-top: 1px solid #ccc;
     .chr-item {
       width: 50%;
+      .filter-select {
+        width: 180px;
+      }
     }
     .chr-filter {
       background-color: #fff;

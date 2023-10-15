@@ -19,6 +19,7 @@ export default {
   methods: {
     submitFliter(data) {
       this.filterData = data
+      // console.log(this.filterData) 测试数据
       this.$nextTick(() => {
         this.$refs.charts.$refs.charts.makeCharts(this.filterData)
       })

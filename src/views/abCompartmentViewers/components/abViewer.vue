@@ -16,6 +16,7 @@
         <span>下载宽度：</span>
         <el-input v-model="downloadWidth" style="width: 70px;" /> px
         <el-button style="margin-left: 20px;" type="primary" @click="downloadCharts">Download <i class="el-icon-download" /></el-button>
+        <el-button style="margin-left:50px;" type="primary" @click="downloadFile">下载数据 <i class="el-icon-download" /></el-button>
       </div>
       <div class="gene-modes" style="margin-top: 15px">
         <!-- <el-switch
@@ -31,7 +32,7 @@
 <script>
 import { compartmentResult } from '@/api/compartment'
 import * as echarts from 'echarts'
-import { geneResult } from '@/api/gene'
+import { geneResult, downloadFile } from '@/api/gene'
 
 export default {
   props: {
@@ -66,7 +67,7 @@ export default {
       return echarts.util.merge({
         data: [item[0], item[1], item[2]],
         tooltip: {
-          formatter: function(params) {
+          formatter: function() {
             const start = item[0]
             const end = item[1]
             const value = item[2]
@@ -83,6 +84,7 @@ export default {
              '</div>'
           }
         },
+        // 自定义图表类型
         type: 'custom',
         xAxisIndex: 0,
         yAxisIndex: 0,
@@ -138,6 +140,7 @@ export default {
         },
         legend: {},
         dimensions: ['start', 'end', 'value'],
+        // 表示维度的映射关系，维度的顺序依次是：x, y, value, itemName
         encode: {
           x: [0, 1],
           y: 2,
@@ -152,6 +155,7 @@ export default {
       this.compartment.map(i => {
         items.push(this.makeTopItem(i))
       })
+      console.log(this.compartment) // 测试compartment数据是否存在
       return items
     },
     // 画直线
@@ -161,10 +165,10 @@ export default {
         xAxisIndex: 1,
         yAxisIndex: 1,
         silent: true, // 设置为静默，即使超出视图范围也绘制
-        data: [[data[1], data[0] + 0.3], [data[2], data[0] + 0.3]],
+        data: [[data[1], data[0] + 0.5], [data[2], data[0] + 0.5]],
         showSymbol: false,
         lineStyle: {
-          color: '#000',
+          color: '#444', // 直线的填充颜色（此处要修改为蓝色）
           cap: 'round'
         },
         animation: false
@@ -190,6 +194,7 @@ export default {
           const startPosition = params.coordSys.x
           const endPosition = params.coordSys.x + params.coordSys.width
           const pos = api.coord([arrow[0], arrow[1]]) // 箭头的 x 坐标
+          const posX = arrow[2] > 0 ? pos[0] + 8 : pos[0] - 8
           const direction = arrow[2] > 0 ? 35 : 0.5
           if (pos[0] <= startPosition || pos[0] >= endPosition) {
             show = false
@@ -198,7 +203,7 @@ export default {
           return {
             invisible: !show,
             type: 'path',
-            x: pos[0],
+            x: posX,
             y: pos[1],
             z2: 999,
             silent: true,
@@ -227,26 +232,46 @@ export default {
       return echarts.util.merge({
         data: [exon[0], exon[1], exon[2]],
         type: 'custom',
+        tooltip: {
+          trigger: 'item',
+          // 框中展示start end name，start对应exon[1]，end对应exon[2]，name对应exon[3]
+          formatter: function() {
+            const start = exon[1]
+            const end = exon[2]
+            const name = exon[3]
+            const color = 'pink'
+
+            // 自定义tooltip内容，添加彩色圆点和文字
+            return '<div>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span">Start:</span> ' + start + 'Mb<br>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span">End:</span> ' + end + 'Mb<br>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span>Name:</span> ' + name +
+             '</div>'
+          }
+        },
         xAxisIndex: 1,
         yAxisIndex: 1,
         renderItem: function(params, api) {
           const visibleWidth = params.coordSys.width // 可视区的结束像素
           const startXPos = params.coordSys.x // 可视区的开始像素
 
-          const rowStart = api.coord([exon[1], exon[0] + 0.6]) // 原始开始点应该的位置
-          const rowEnd = api.coord([exon[2], exon[0] + 0.6]) // 原始结束点应该的位置
+          const rowStart = api.coord([exon[1], exon[0] + 0.5]) // 原始开始点应该的位置
+          const rowEnd = api.coord([exon[2], exon[0] + 0.5]) // 原始结束点应该的位置
 
-          const height = api.size([1, 0.6])[1]
+          // const height = api.size([1, 0.6])[1]
 
           // 如果x左边超过了
           let xLeftOutOfRange = false
-          let xPosition = api.coord([exon[1], exon[0] + 0.6])[0]
+          let xPosition = api.coord([exon[1], exon[0] + 0.5])[0]
           if (xPosition <= startXPos) {
             xPosition = startXPos
             xLeftOutOfRange = true
           }
 
-          let width = api.size([exon[2] - exon[1], 0.6])[0]
+          let width = api.size([exon[2] - exon[1], 0.5])[0]
           if (xLeftOutOfRange) {
             width = width - (startXPos - rowStart[0])
           }
@@ -259,26 +284,27 @@ export default {
           width = width >= 0 ? width : 0
 
           var style = api.style()
-          style.fill = '#ccc'
+          style.fill = '#000000' // 方块的填充颜色
 
           return {
             type: 'rect',
+            z2: 999,
             x: xPosition,
-            y: rowStart[1],
+            y: rowStart[1] - 4,
             bounding: 'raw',
             shape: {
               width: width,
-              height: height
+              height: 8
             },
             style: style
           }
         },
-        dimensions: [exon[1], exon[2], exon[3]],
+        dimensions: [exon[0], exon[1], exon[2], exon[3]],
         encode: {
           x: [1, 2],
           y: 0,
-          tooltip: [1, 2, 3], // 只使用索引2的值作为tooltip内容
-          itemName: 0
+          tooltip: 2, // 只使用索引2的值作为tooltip内容
+          itemName: 3
         }
       })
     },
@@ -307,8 +333,14 @@ export default {
         start: filter.chrStart,
         end: filter.chrEnd
       }
-
-      let { data } = await compartmentResult(filter.chromosome.cs_ID, range)
+      console.log(filter)
+      let { data } = await compartmentResult(filter.chromosome.cs_ID, filter.tissue.tissue_ID, filter.software.software_ID, range)
+      console.log(data)
+      // console.log(filter.chromosome.cs_ID)
+      // 下列代码用于测试
+      // const { message } = await compartmentResult(filter.chromosome.cs_ID, range)
+      // console.log(data)
+      // console.log(message)
       if (data == null) {
         data = []
         return
@@ -374,12 +406,25 @@ export default {
         this.loading = false
         this.$message('该区域暂无数据')
       }
-      for (const item of rnaList) {
-        this.singleGenes.push([0, item.start_POINT, item.end_POINT])
-        this.singleArrows.push([(item.start_POINT + item.end_POINT) / 2, 0.3, item.direction === 0 ? -1 : 1])
+      let count = 0
+      for (const items of rnaList) {
+        for(const item of items){
+          this.singleGenes.push([count, item.start_POINT, item.end_POINT])
+          this.singleArrows.push([item.direction=== 0 ? item.start_POINT : item.end_POINT, 0.5+count, item.direction === 0 ? -1 : 1])
+        }
+        console.log(count)
+        count -= 0.1
+        // this.singleGenes.push([0, item.start_POINT, item.end_POINT])
+        // this.singleArrows.push([item.direction=== 0 ? item.start_POINT : item.end_POINT, 0.3, item.direction === 0 ? -1 : 1])
       }
-      for (const item of rnaStructureTs) {
-        this.exons.push([0, item.start_POINT, item.end_POINT, item.mrna_Name])
+      count = 0
+      for (const items of rnaStructureTs) {
+        // this.exons.push([0, item.start_POINT, item.end_POINT, item.mrna_Name])
+        for(const item of items){
+          this.exons.push([count, item.start_POINT, item.end_POINT, item.mrna_Name])
+        }
+        console.log(count)
+        count -= 0.1
       }
 
       const geneLevels = 1
@@ -435,11 +480,12 @@ export default {
         // 直角坐标系内绘图网格
         grid: [
           this.makeGrid(40, this.firstChartHeight),
-          this.makeGrid(40 + (this.firstChartHeight + 60), this.geneHeight)
+          this.makeGrid(40 + (this.firstChartHeight + 100), this.geneHeight)
         ],
         xAxis: [
           {
             gridIndex: 0,
+            show: false,
             min: vm.xAxiosRange.minX,
             max: vm.xAxiosRange.maxX,
             type: 'value',
@@ -459,9 +505,15 @@ export default {
             max: vm.xAxiosRange.maxX,
             type: 'value',
             axisLabel: {
-              formatter: '{value} Mb' // 替换 '单位' 为你想要的实际单位
+              // formatter: '{value}' // 替换 '单位' 为你想要的实际单位
+              formatter: function(value){
+                return value>0.01?value+'Mb':value*1024+'Kb'
+              }
             },
             scale: true,
+            splitLine: {
+              show: false
+            },
             axisLine: {
               lineStyle: {
                 color: '#000'
@@ -479,10 +531,13 @@ export default {
                 color: '#000'
               }
             },
-            splitLine: {
+            splitLine: {},
+            axisTick: {
+              show: false
             }
           },
           {
+            show: false,
             gridIndex: 1,
             type: 'value',
             max: this.maxYRange,
@@ -500,14 +555,14 @@ export default {
           // 下面的图
           // 绘制直线们
           ...this.makeIntrons(),
-          // 绘制蓝方块们
+          // 绘制方块们
           ...this.makeExons(),
           // 绘制箭头们
           ...this.makeArrows()
         ],
-        graph: [
-          ...this.makeIntrons()
-        ],
+        // graph: [
+        //   ...this.makeIntrons()
+        // ],
       }
 
       // 使用 ECharts 库渲染图表
@@ -561,6 +616,23 @@ export default {
       await this.renderChart('chart')
 
       this.loading = false
+    },
+    // 主动调用下载图片的原始数据
+    async downloadFile() {
+      try{
+        const filter = Object.assign({}, this.filter)
+        const res = await downloadFile(filter.chromosome.cs_ID, filter.tissue.tissue_ID, filter.software.software_ID, filter.chrStart, filter.chrEnd)
+        // const file = new File([res], 'data.txt', {type: 'application/octet-stream'})
+        const fileName = 'data.txt'
+        const downloadLink = document.createElement('a')
+        downloadLink.href = window.URL.createObjectURL(new Blob([res]))
+        downloadLink.download = fileName // 设置下载的文件名
+        document.body.appendChild(downloadLink)
+        downloadLink.click()
+        document.body.removeChild(downloadLink)
+      }catch(error){
+        console.error('文件下载失败',error);
+      }
     },
     // 绘图
     resetMinAndMax(min,max) {

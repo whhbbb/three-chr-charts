@@ -20,6 +20,19 @@ export function dropDownCultivar(speciesId) {
   })
 }
 
+// 根据品种查找所有组织
+export function dropDownTissue(cultivarId) {
+  return request({
+    url: `/option/tissue/${cultivarId}`
+  })
+}
+// 查找所有软件
+export function dropDownSoftwareAll() {
+  return request({
+    url: '/option/software/all'
+  })
+}
+
 // 查找所有染色体
 export function dropDownChromosomeAll() {
   return request({

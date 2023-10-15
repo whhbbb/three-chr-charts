@@ -2,7 +2,36 @@
   <el-card class="chr-container" :style="{height:allChartsHeight + 'px'}">
     <div class="title">HIC</div>
     <div class="charts-tools-container">
-      <div class="color-controlers-container">
+      <div class="show-selecter tool">
+        <el-select v-model="value" filterable placeholder="请选择Show" style="height: 80%;">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </div>
+      <div class="nor-selecter tool">
+        <div class="nor-content">Normalization(Obs|Ctrl)</div>
+        <el-select v-model="value" filterable>
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+        <el-select v-model="value" filterable>
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </div>
+      <div class="color-controlers-container tool">
         <div class="color-tips">最高值颜色</div>
         <el-color-picker v-model="maxColor" @change="changeMaxColor" />
         <div class="color-tips">最低值颜色</div>
@@ -44,6 +73,8 @@ import * as echarts from 'echarts'
 import { hicResult } from '@/api/tad'
 import { geneResult } from '@/api/gene'
 import { setTimeout } from 'timers';
+// const { v4: uuidv4 } = require('uuid');
+
 export default {
   filter: {
     type: Object,
@@ -68,7 +99,23 @@ export default {
       axiosRange: {
         minX: Infinity,
         maxX: -Infinity
-      }
+      },
+      options: [{
+          value: '选项1',
+          label: '黄金糕'
+        }, {
+          value: '选项2',
+          label: '双皮奶'
+        }, {
+          value: '选项3',
+          label: '蚵仔煎'
+        }, {
+          value: '选项4',
+          label: '龙须面'
+        }, {
+          value: '选项5',
+          label: '北京烤鸭'
+        }]
     }
   },
   methods: {
@@ -93,7 +140,7 @@ export default {
         data: [[data[1], data[0] + 0.3], [data[2], data[0] + 0.3]],
         showSymbol: false,
         lineStyle: {
-          color: '#000',
+          color: '#444',
           cap: 'round'
         },
         animation: false
@@ -117,6 +164,7 @@ export default {
           const startPosition = params.coordSys.x
           const endPosition = params.coordSys.x + params.coordSys.width
           const pos = api.coord([arrow[0], arrow[1]]) // 箭头的 x 坐标
+          const posX = arrow[2] > 0 ? pos[0] + 10 : pos[0] - 10
           const direction = arrow[2] > 0 ? 35 : 0.5
           if (pos[0] <= startPosition || pos[0] >= endPosition) {
             show = false
@@ -125,7 +173,7 @@ export default {
           return {
             invisible: !show,
             type: 'path',
-            x: pos[0],
+            x: posX,
             y: pos[1],
             z2: 999,
             silent: true,
@@ -154,24 +202,44 @@ export default {
       return echarts.util.merge({
         data: [exon[0], exon[1], exon[2]],
         type: 'custom',
+        tooltip:{
+          trigger: 'item',
+          // 框中展示start end name，start对应exon[1]，end对应exon[2]，name对应exon[3]
+          formatter: function() {
+            const start = exon[1]
+            const end = exon[2]
+            const name = exon[3]
+            const color = 'pink'
+
+            // 自定义tooltip内容，添加彩色圆点和文字
+            return '<div>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span">Start:</span> ' + start + 'Mb<br>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span">End:</span> ' + end + 'Mb<br>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span>Name:</span> ' + name +
+             '</div>'
+          }
+        },
         renderItem: function(params, api) {
           const visibleWidth = params.coordSys.width // 可视区的结束像素
           const startXPos = params.coordSys.x // 可视区的开始像素
 
-          const rowStart = api.coord([exon[1], exon[0] + 0.6]) // 原始开始点应该的位置
-          const rowEnd = api.coord([exon[2], exon[0] + 0.6]) // 原始结束点应该的位置
+          const rowStart = api.coord([exon[1], exon[0] + 0.3]) // 原始开始点应该的位置
+          const rowEnd = api.coord([exon[2], exon[0] + 0.3]) // 原始结束点应该的位置
 
-          const height = api.size([1, 0.6])[1]
+          const height = api.size([1, 0.3])[1]
 
           // 如果x左边超过了
           let xLeftOutOfRange = false
-          let xPosition = api.coord([exon[1], exon[0] + 0.6])[0]
+          let xPosition = api.coord([exon[1], exon[0] + 0.3])[0]
           if (xPosition <= startXPos) {
             xPosition = startXPos
             xLeftOutOfRange = true
           }
 
-          let width = api.size([exon[2] - exon[1], 0.6])[0]
+          let width = api.size([exon[2] - exon[1], 0.3])[0]
           if (xLeftOutOfRange) {
             width = width - (startXPos - rowStart[0])
           }
@@ -184,16 +252,16 @@ export default {
           width = width >= 0 ? width : 0
 
           var style = api.style()
-          style.fill = '#ccc'
+          style.fill = '#000'
 
           return {
             type: 'rect',
             x: xPosition,
-            y: rowStart[1],
+            y: rowStart[1] - 5,
             bounding: 'raw',
             shape: {
               width: width,
-              height: height
+              height: 10
             },
             style: style
           }
@@ -357,6 +425,7 @@ export default {
         binYEnd: filter.chrEnd / 1000000 
       }
 
+      // const uuid = uuidv4()
      
       /* eslint-disable */
       const vm = this // 赶时间 就这么写吧
@@ -364,7 +433,9 @@ export default {
       async function pollData(uid) {
         range.uuid = uid
         // const { data, code } = await hicResult(filter.chromosome.cs_ID, range)
-        const { data, code } = await hicResult(1089, range)
+        // const { data, code } = await hicResult(1089, range)
+        console.log('range', range)
+        const { data, code } = await hicResult(filter.chr1.cs_ID, filter.tissue.tissue_ID, range)
 
         if (data === null) {
           console.log('轮询结束')
@@ -592,7 +663,7 @@ export default {
       const { rnaList, rnaStructureTs } = res
       for (const item of rnaList) {
         this.singleGenes.push([0, item.start_POINT, item.end_POINT])
-        this.singleArrows.push([(item.start_POINT + item.end_POINT) / 2, 0.3, item.direction === 0 ? -1 : 1])
+        this.singleArrows.push([item.direction=== 0 ? item.start_POINT : item.end_POINT, 0.3, item.direction === 0 ? -1 : 1])
       }
       for (const item of rnaStructureTs) {
         this.exons.push([0, item.start_POINT, item.end_POINT, item.mrna_Name])
@@ -682,7 +753,6 @@ export default {
       chart.setOption(option)
     },
     async makeCharts() {
-      this.$attrs.filter.chromosome.cs_ID = 1089
       await echarts.dispose(document.querySelector('.chart'))
       await echarts.dispose(document.querySelector('.gene'))
       await this.handleData()
@@ -729,12 +799,33 @@ export default {
 .charts-tools-container {
   display: flex;
   margin-top: 50px;
-  flex-direction: column;
-  align-items: flex-end;
+  // flex-direction: column;
+  // align-items: flex-end;
+  justify-content: space-between;
+  .tool{
+    background-color: #dfeef5;
+    padding: 30px;
+    border-radius: 5px;
+  }
+  .show-selecter{
+    padding-top: 49px;
+    align-items: center;
+    margin-right: 30px;
+  }
+  .nor-selecter{
+    margin-right: 30px;
+    .nor-content{
+      text-align: center;
+      font-weight: bold;
+      padding-bottom: 5px;
+    }
+  }
   .color-controlers-container {
   display: flex;
   justify-items: center;
-  margin-bottom: 20px;
+  align-items: center;
+  // margin-bottom: 20px;
+  
   .color-tips {
     line-height: 40px;
     margin-right: 10px;

@@ -15,15 +15,39 @@
             />
           </el-select>
         </div>
-        <!-- 选择组织 -->
-        <div class="tissue-container filter-item">
-          <div class="filter-name">Tissue</div>
-          <el-select v-model="filter.cultivar" class="filter-select" filterable placeholder="请选择组织" @focus="dropDownTissue">
+        <!-- 选择品种 -->
+        <div class="cultivar-container filter-item">
+          <div class="filter-name">Cultivar</div>
+          <el-select v-model="filter.cultivar" class="filter-select" filterable placeholder="请选择品种" @focus="dropDownCultivar">
             <el-option
               v-for="item in options.cultivar"
               :key="item.cultivar_ID"
               :label="item.cultivar_NAME"
               :value="item.cultivar_ID"
+            />
+          </el-select>
+        </div>
+        <!-- 选择组织 -->
+        <div class="tissue-container filter-item">
+          <div class="filter-name">Tissue</div>
+          <el-select v-model="filter.tissue" class="filter-select" filterable placeholder="请选择组织" @focus="dropDownTissue">
+            <el-option
+              v-for="item in options.tissue"
+              :key="item.tissue_ID"
+              :label="item.tissue_NAME"
+              :value="item.tissue_ID"
+            />
+          </el-select>
+        </div>
+        <!-- 选择software -->
+        <div class="software-container filter-item">
+          <div class="filter-name">Software</div>
+          <el-select v-model="filter.software" class="filter-select" filterable placeholder="请选择software" @focus="dropDownSoftware">
+            <el-option
+              v-for="item in options.software"
+              :key="item.software_ID"
+              :label="item.software_NAME"
+              :value="item.software_ID"
             />
           </el-select>
         </div>
@@ -81,13 +105,15 @@
 </template>
 
 <script>
-import { dropDownSpecies, dropDownCultivar, dropDownChromosome, dropDownCultivarAll, dropDownChromosomeAll } from '@/api/filter-table'
+import { dropDownSpecies, dropDownCultivar, dropDownChromosome, dropDownCultivarAll, dropDownChromosomeAll, dropDownSoftwareAll, dropDownTissue } from '@/api/filter-table'
 export default {
   data() {
     return {
       filter: {
         species: '',
         cultivar: '',
+        tissue: '',
+        software: '',
         chromosome: '',
         chr1Start: '',
         chr1End: '',
@@ -97,6 +123,8 @@ export default {
       options: {
         species: [],
         cultivar: [],
+        tissue: [],
+        software: [],
         chromosome: [],
         chrStart: [],
         chrEnd: []
@@ -112,8 +140,8 @@ export default {
       const { data } = await dropDownSpecies()
       this.options.species = data
     },
-    // 查找组织
-    async dropDownTissue() {
+    // 查找品种
+    async dropDownCultivar() {
       this.options.cultivar = []
       if (this.filter.species !== '') {
         const { data } = await dropDownCultivar(this.filter.species)
@@ -123,11 +151,25 @@ export default {
         this.options.cultivar = data
       }
     },
+    // 查找组织
+    async dropDownTissue() {
+      this.options.tissue = []
+      if (this.filter.cultivar !== '') {
+        const { data } = await dropDownTissue(this.filter.cultivar)
+        this.options.tissue = data
+      }
+    },
+    // 查找software
+    async dropDownSoftware() {
+      this.options.software = []
+      const { data } = await dropDownSoftwareAll()
+      this.options.software = data
+    },
     // 查找染色体
     async dropDownChromosome() {
       this.options.chromosome = []
       if (this.filter.species !== '') {
-        const { data } = await dropDownChromosome(this.filter.species)
+        const { data } = await dropDownChromosome(this.filter.cultivar)
         this.options.chromosome = data
       } else {
         const { data } = await dropDownChromosomeAll()
@@ -137,6 +179,7 @@ export default {
     clearFilter() {
       this.filter.species = ''
       this.filter.cultivar = ''
+      this.filter.tissue = ''
       this.filter.chrNum = ''
       this.filter.chromosome = ''
       this.filter.chrStart = ''
@@ -144,10 +187,25 @@ export default {
     },
     submitFliter() {
       const chrs = this.options.chromosome
-      const filter = this.filter
+      const filter = JSON.parse(JSON.stringify(this.filter)) // 修改了const filter = this.filter
       for (let i = 0; i < chrs.length; ++i) {
         if (chrs[i].cs_NAME === this.filter.chromosome) {
           filter.chromosome = chrs[i]
+        }
+      }
+      for (let i = 0; i < this.options.cultivar.length; ++i) {
+        if (this.options.cultivar[i].cultivar_ID === this.filter.cultivar) {
+          filter.cultivar = this.options.cultivar[i]
+        }
+      }
+      for (let i = 0; i < this.options.software.length; ++i) {
+        if (this.options.software[i].software_ID === this.filter.software) {
+          filter.software = this.options.software[i]
+        }
+      }
+      for (let i = 0; i < this.options.tissue.length; ++i) {
+        if (this.options.tissue[i].tissue_ID === this.filter.tissue) {
+          filter.tissue = this.options.tissue[i]
         }
       }
       this.$emit('submitFliter', filter)
@@ -181,11 +239,12 @@ $lightBlue: #dfeef5;
 .filter-container {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   background-color: $lightBlue;
   margin: 20px 0;
   padding: 30px;
   .filter-item{
-    width: 50%;
+    // width: 50%;
     .filter-name {
       margin-bottom: 7px;
       font-size: 20px;

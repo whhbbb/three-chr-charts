@@ -1,14 +1,21 @@
 <template>
   <el-card class="chromation-container">
     <div class="title">染色质环 Loop</div>
-    <div class="charts-container" :style="{height: allChartsHeight+100 + 'px'}">
-      <div ref="chart" class="chart" style="margin-top:0;" :style="{height: allChartsHeight + 'px'} " />
+    <div class="zoom-tools" style="display: flex;justify-content: flex-end;">
+      <el-button type="primary" icon="el-icon-back" @click="lastRange" />
+      <el-button type="primary" icon="el-icon-right" @click="nextRange" />
+      <el-button icon="el-icon-zoom-in" type="primary" circle @click="zoomIn" />
+      <el-button icon="el-icon-zoom-out" type="primary" circle @click="zoomOut" />
+    </div>
+    <div class="charts-container" :style="{ height: allChartsHeight + 100 + 'px' }">
+      <div ref="chart" class="chart" style="margin-top:0;" :style="{ height: allChartsHeight + 'px' }" />
     </div>
     <div class="tools-container" style="margin-top: 25px;">
       <div class="download-container">
         <span>下载宽度：</span>
         <el-input v-model="downloadWidth" style="width: 70px;" /> px
         <el-button style="margin-left: 20px;" type="primary" @click="downloadCharts">Download <i class="el-icon-download" /></el-button>
+        <el-button style="margin-left:50px;" type="primary" @click="downloadFile">下载数据 <i class="el-icon-download" /></el-button>
       </div>
       <div class="gene-modes" style="margin-top: 15px">
         <!-- <el-switch
@@ -26,13 +33,13 @@
 
 import * as echarts from 'echarts'
 import { loopResult, doubleLoopResult } from '@/api/loop'
-import { geneResult } from '@/api/gene'
+import { geneResult, downloadFile } from '@/api/gene'
 
 export default {
   props: {
     filter: {
       type: Object,
-      default: () => {}
+      default: () => { }
     }
   },
   data() {
@@ -74,10 +81,10 @@ export default {
         xAxisIndex: 1,
         yAxisIndex: 1,
         silent: true, // 设置为静默，即使超出视图范围也绘制
-        data: [[data[1], data[0] + 0.3], [data[2], data[0] + 0.3]],
+        data: [[data[1], data[0] + 0.5], [data[2], data[0] + 0.5]],
         showSymbol: false,
         lineStyle: {
-          color: '#000',
+          color: '#444',
           cap: 'round'
         },
         animation: false
@@ -98,11 +105,12 @@ export default {
         xAxisIndex: 1,
         yAxisIndex: 1,
         data: [arrow[0], arrow[1]],
-        renderItem: function(params, api) {
+        renderItem: function (params, api) {
           let show = true
           const startPosition = params.coordSys.x
           const endPosition = params.coordSys.x + params.coordSys.width
           const pos = api.coord([arrow[0], arrow[1]]) // 箭头的 x 坐标
+          const posX = arrow[2] > 0 ? pos[0] + 10 : pos[0] - 10
           const direction = arrow[2] > 0 ? 35 : 0.5
           if (pos[0] <= startPosition || pos[0] >= endPosition) {
             show = false
@@ -111,7 +119,7 @@ export default {
           return {
             invisible: !show,
             type: 'path',
-            x: pos[0],
+            x: posX,
             y: pos[1],
             z2: 999,
             silent: true,
@@ -140,26 +148,45 @@ export default {
       return echarts.util.merge({
         data: [exon[0], exon[1], exon[2]],
         type: 'custom',
+        tooltip: {
+          trigger: 'item',
+          // 框中展示start end name，start对应exon[1]，end对应exon[2]，name对应exon[3]
+          formatter: function() {
+            const start = exon[1]
+            const end = exon[2]
+            const name = exon[3]
+            const color = 'pink'
+
+            // 自定义tooltip内容，添加彩色圆点和文字
+            return '<div>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span">Start:</span> ' + start + 'Mb<br>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span">End:</span> ' + end + 'Mb<br>' +
+             '<span style="display:inline-block;margin-right:5px;width:10px;height:10px;border-radius:50%;background-color:' + color + ';"></span>' +
+             '<span>Name:</span> ' + name +
+             '</div>'
+          }
+        },
         xAxisIndex: 1,
         yAxisIndex: 1,
-        renderItem: function(params, api) {
+        renderItem: function (params, api) {
           const visibleWidth = params.coordSys.width // 可视区的结束像素
           const startXPos = params.coordSys.x // 可视区的开始像素
 
-          const rowStart = api.coord([exon[1], exon[0] + 0.6]) // 原始开始点应该的位置
-          const rowEnd = api.coord([exon[2], exon[0] + 0.6]) // 原始结束点应该的位置
+          const rowStart = api.coord([exon[1], exon[0] + 0.5]) // 原始开始点应该的位置
+          const rowEnd = api.coord([exon[2], exon[0] + 0.5]) // 原始结束点应该的位置
 
-          const height = api.size([1, 0.6])[1]
 
           // 如果x左边超过了
           let xLeftOutOfRange = false
-          let xPosition = api.coord([exon[1], exon[0] + 0.6])[0]
+          let xPosition = api.coord([exon[1], exon[0] + 0.5])[0]
           if (xPosition <= startXPos) {
             xPosition = startXPos
             xLeftOutOfRange = true
           }
 
-          let width = api.size([exon[2] - exon[1], 0.6])[0]
+          let width = api.size([exon[2] - exon[1], 0.5])[0]
           if (xLeftOutOfRange) {
             width = width - (startXPos - rowStart[0])
           }
@@ -172,21 +199,22 @@ export default {
           width = width >= 0 ? width : 0
 
           var style = api.style()
-          style.fill = '#ccc'
+          style.fill = '#000'
 
           return {
             type: 'rect',
+            z2: 100,
             x: xPosition,
-            y: rowStart[1],
+            y: rowStart[1] - 5,
             bounding: 'raw',
             shape: {
               width: width,
-              height: height
+              height: 10
             },
             style: style
           }
         },
-        dimensions: [exon[1], exon[2], exon[3]],
+        dimensions: [exon[0],exon[1], exon[2], exon[3]],
         encode: {
           x: [1, 2],
           y: 0,
@@ -207,14 +235,18 @@ export default {
       const vm = this
 
       const filter = this.filter
+      console.log('filter', filter)
+      console.log(vm.filter)
       let res
       if (filter.chr2Start === '' || filter.chr2End === '') {
         const range = {
           start: vm.filter.chr1Start,
           end: vm.filter.chr1End
         }
-        const response = await loopResult(vm.filter.chromosome.cs_ID === '' ? 1089 : vm.filter.chromosome.cs_ID, range)
+        const response = await loopResult(filter.chromosome.cs_ID === '' ? 1089 : filter.chromosome.cs_ID, filter.tissue.tissue_ID, filter.software.software_ID, range)
+        console.log(response)
         res = response.data
+        console.log('res', res)
       } else {
         const range = {
           start1: vm.filter.chr1Start,
@@ -222,7 +254,7 @@ export default {
           start2: vm.filter.chr2Start,
           end2: vm.filter.chr2End
         }
-        const response = await doubleLoopResult(vm.filter.chromosome.cs_ID === '' ? 1089 : vm.filter.chromosome.cs_ID, range)
+        const response = await doubleLoopResult(filter.chromosome.cs_ID === '' ? 1089 : filter.chromosome.cs_ID, filter.tissue.tissue_ID, filter.software.software_ID, range)
         res = response.data
       }
       if (res === null) {
@@ -278,11 +310,12 @@ export default {
         animation: false,
         grid: [
           this.makeGrid(40, this.firstChartHeight),
-          this.makeGrid(40 + (this.firstChartHeight + 60), this.geneHeight)
+          this.makeGrid(40 + (this.firstChartHeight + 80), this.geneHeight)
         ],
         xAxis: [
           {
             gridIndex: 0,
+            show: false,
             min: vm.axiosRange.minX,
             max: vm.axiosRange.maxX,
             type: 'value',
@@ -305,7 +338,10 @@ export default {
             },
             type: 'value',
             axisLabel: {
-              formatter: '{value} Mb' // 替换 '单位' 为你想要的实际单位
+              // formatter: '{value}' // 替换 '单位' 为你想要的实际单位
+              formatter: function(value){
+                return value>0.01?value+'Mb':value*1024+'Kb'
+              }
             },
             scale: true,
             axisLine: {
@@ -343,7 +379,7 @@ export default {
           }
         ],
         tooltip: {
-          formatter: function(params) {
+          formatter: function (params) {
             if (params.dataType === 'node') return
             if (params.componentSubType === 'graph') {
               const { value: val, ic_NUM } = params.data.labelContent || 0
@@ -435,14 +471,14 @@ export default {
         this.$message.error('请输入正确的宽度')
         return
       }
-      if(this.downloadWidth < 500) {
-       await  this.$confirm('为了确保文字清晰可见，不推荐下载过小的图片。我们建议您选择宽度至少为500px的图片进行下载。如果您点击确定，将为您下载宽度为500px的图片；否则，将下载您当前选择的数据所对应的图片。', '提示', {
+      if (this.downloadWidth < 500) {
+        await this.$confirm('为了确保文字清晰可见，不推荐下载过小的图片。我们建议您选择宽度至少为500px的图片进行下载。如果您点击确定，将为您下载宽度为500px的图片；否则，将下载您当前选择的数据所对应的图片。', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
-         this.downloadWidth = 500
-        }).catch(() => { 
+          this.downloadWidth = 500
+        }).catch(() => {
         })
       }
       const chart = echarts.getInstanceByDom(document.querySelector('.chart'))
@@ -481,6 +517,23 @@ export default {
 
       this.loading = false
     },
+    // 主动调用下载图片的原始数据
+    async downloadFile(){
+      try{
+        const filter = Object.assign({}, this.filter)
+        const res = await downloadFile(filter.chromosome.cs_ID, filter.tissue.tissue_ID, filter.software.software_ID, filter.chrStart, filter.chrEnd)
+        // const file = new File([res], 'data.txt', {type: 'application/octet-stream'})
+        const fileName = 'data.txt'
+        const downloadLink = document.createElement('a')
+        downloadLink.href = window.URL.createObjectURL(new Blob([res]))
+        downloadLink.download = fileName // 设置下载的文件名
+        document.body.appendChild(downloadLink)
+        downloadLink.click()
+        document.body.removeChild(downloadLink)
+      }catch(error){
+        console.error('文件下载失败',error);
+      }
+    },
     async handleGeneData() {
       const filter = this.filter
       this.singleGenes = []
@@ -494,6 +547,7 @@ export default {
           end: filter.chr1End
         }
         const response = await geneResult(filter.chromosome.cs_ID, range)
+        console.log(response)
         const { data } = response
         if (data === null) {
           this.$message('查询不到RNA数据')
@@ -501,63 +555,87 @@ export default {
         }
         res = response.data
       } else {
-        const range1 = {
-          start: filter.chr1Start,
-          end: filter.chr1End
-        }
-        const range2 = {
-          start: filter.chr2Start,
-          end: filter.chr2End
-        }
-
+        if(filter.chr1End<=filter.chr2Start || filter.chr2End<=filter.chr1Start){
+          const range1 = {
+            start: filter.chr1Start,
+            end: filter.chr1End
+          }
+          const range2 = {
+            start: filter.chr2Start,
+            end: filter.chr2End
+          }
         let res1
         let res2
 
         try {
           const response = await geneResult(filter.chromosome.cs_ID, range1)
-          res1 = response.data 
+          res1 = response.data
         } catch (error) {
           res1 = null
         }
 
-       try {
+        try {
           const response = await geneResult(filter.chromosome.cs_ID, range2)
-          res2 = response.data 
+          res2 = response.data
         } catch (error) {
           res2 = null
         }
-       
-        if (res1 === null  && res2 === null) {
+
+        if (res1 === null && res2 === null) {
           this.$message.error('查询不到RNA数据')
           return
         }
 
-        if(res1 === null) {
+        if (res1 === null) {
           res.rnaList = [...res2.rnaList]
           res.rnaStructureTs = [...res2.rnaStructureTs]
-        } else if(res2 === null) {
+        } else if (res2 === null) {
           res.rnaList = [...res1.rnaList]
           res.rnaStructureTs = [...res1.rnaStructureTs]
         } else {
-          res.rnaList = [...res1.rnaList,...res2.rnaList]
-          res.rnaStructureTs = [...res1.rnaStructureTs,...res2.rnaStructureTs]
+          res.rnaList = [...res1.rnaList, ...res2.rnaList]
+          res.rnaStructureTs = [...res1.rnaStructureTs, ...res2.rnaStructureTs]
         }
-
+        }else{
+          const start = Math.min(range1.start, range2.start);
+          const end = Math.max(range1.end, range2.end);
+          const range = {
+            start: start,
+            end: end
+          }
+          const response = await geneResult(filter.chromosome.cs_ID, range)
+          res = response.data
+          if(allRes === null){
+            this.$message.error('查询不到RNA数据')
+            return
+          }
+        }
       }
 
       const { rnaList, rnaStructureTs } = res
-      for (const item of rnaList) {
-        this.singleGenes.push([0, item.start_POINT, item.end_POINT])
-        this.singleArrows.push([(item.start_POINT + item.end_POINT) / 2, 0.3, item.direction === 0 ? -1 : 1])
+      let count = 0
+      for (const items of rnaList) {
+        for (const item of items) {
+          this.singleGenes.push([count, item.start_POINT, item.end_POINT])
+          this.singleArrows.push([item.direction === 0 ? item.start_POINT : item.end_POINT, 0.5+count, item.direction === 0 ? -1 : 1])
+        }
+        count-=0.1
+        // this.singleGenes.push([0, item.start_POINT, item.end_POINT])
+        // this.singleArrows.push([item.direction=== 0 ? item.start_POINT : item.end_POINT, 0.3, item.direction === 0 ? -1 : 1])
       }
-      for (const item of rnaStructureTs) {
-        this.exons.push([0, item.start_POINT, item.end_POINT, item.mrna_Name])
+      count = 0
+      for (const items of rnaStructureTs) {
+        for (const item of items) {
+          this.exons.push([count, item.start_POINT, item.end_POINT, item.mrna_Name])
+        }
+        count-=0.1
+        // this.exons.push([0, item.start_POINT, item.end_POINT, item.mrna_Name])
       }
 
       const singleGenes = this.singleGenes
-      for(let i=0;i<singleGenes.length;++i) {
-        if(singleGenes[i][1] < this.axiosRange.minX) this.axiosRange.minX = singleGenes[i][1]
-        if(singleGenes[i][2] > this.axiosRange.maxX) this.axiosRange.maxX = this.singleGenes[i][2]
+      for (let i = 0; i < singleGenes.length; ++i) {
+        if (singleGenes[i][1] < this.axiosRange.minX) this.axiosRange.minX = singleGenes[i][1]
+        if (singleGenes[i][2] > this.axiosRange.maxX) this.axiosRange.maxX = this.singleGenes[i][2]
       }
 
       const geneLevels = 1
@@ -566,7 +644,7 @@ export default {
       this.allChartsHeight = 300 + this.geneHeight
     },
     async makeCharts() {
-      if(!this.filter.chromosome) {
+      if (!this.filter.chromosome) {
         this.$message.error('请填写chr')
         return
       }
@@ -581,6 +659,76 @@ export default {
       await this.handleData()
       await this.handleGeneData()
       this.renderNormalChart('chart')
+    },
+    // 实现左滑按钮事件
+    async lastRange() {
+      const filter = this.filter
+      if (filter.chr2Start === '' || filter.chr2End === '') {
+        let range = Number(filter.chr1End) - Number(filter.chr1Start)
+        filter.chr1Start = Number(filter.chr1Start) - range/2
+        filter.chr1End = Number(filter.chr1End) - range/2
+      } else {
+        let range1 = Number(filter.chr1End) - Number(filter.chr1Start)
+        filter.chr1Start = Number(filter.chr1Start) - range1/2
+        filter.chr1End = Number(filter.chr1End) - range1/2
+        let range2 = Number(filter.chr2End) - Number(filter.chr2Start)
+        filter.chr2Start = Number(filter.chr2Start) - range2/2
+        filter.chr2End = Number(filter.chr2End) - range2/2
+      }
+      this.$emit('update:filter', filter)
+      await this.makeCharts()
+    },
+    async nextRange() {
+      const filter = this.filter
+      if (filter.chr2Start === '' || filter.chr2End === '') {
+        let range = Number(filter.chr1End) - Number(filter.chr1Start)
+        filter.chr1Start = Number(filter.chr1Start) + range/2
+        filter.chr1End = Number(filter.chr1End) + range/2
+      } else {
+        let range1 = Number(filter.chr1End) - Number(filter.chr1Start)
+        filter.chr1Start = Number(filter.chr1Start) + range1/2
+        filter.chr1End = Number(filter.chr1End) + range1/2
+        let range2 = Number(filter.chr2End) - Number(filter.chr2Start)
+        filter.chr2Start = Number(filter.chr2Start) + range2/2
+        filter.chr2End = Number(filter.chr2End) + range2/2
+      }
+      this.$emit('update:filter', filter)
+      await this.makeCharts()
+    },
+    async zoomIn() {
+      const filter = this.filter
+      if (filter.chr2Start === '' || filter.chr2End === '') {
+        let center = (Number(filter.chr1Start) + Number(filter.chr1End)) / 2
+        let range = Number(filter.chr1End) - Number(filter.chr1Start)
+        filter.chr1Start = center -  range/4
+        filter.chr1End = center + range/4
+      } else {
+        let range1 = Number(filter.chr1End) - Number(filter.chr1Start)
+        filter.chr1Start = Number(filter.chr1Start) + range1/4
+        filter.chr1End = Number(filter.chr1End) - range1/4
+        let range2 = Number(filter.chr2End) - Number(filter.chr2Start)
+        filter.chr2Start = Number(filter.chr2Start) + range2/4
+        filter.chr2End = Number(filter.chr2End) - range2/4
+      }
+      this.$emit('update:filter', filter)
+      await this.makeCharts()
+    },
+    async zoomOut() {
+      const filter = this.filter
+      if (filter.chr2Start === '' || filter.chr2End === '') {
+        let range = Number(filter.chr1End) - Number(filter.chr1Start)
+        filter.chr1Start = Number(filter.chr1Start) - range/2
+        filter.chr1End = Number(filter.chr1End) + range/2
+      } else {
+        let range1 = Number(filter.chr1End) - Number(filter.chr1Start)
+        filter.chr1Start = Number(filter.chr1Start) - range1/2
+        filter.chr1End = Number(filter.chr1End) + range1/2
+        let range2 = Number(filter.chr2End) - Number(filter.chr2Start)
+        filter.chr2Start = Number(filter.chr2Start) - range2/2
+        filter.chr2End = Number(filter.chr2End) + range2/2
+      }
+      this.$emit('update:filter', filter)
+      await this.makeCharts()
     }
   }
 }
@@ -592,14 +740,14 @@ export default {
   flex-direction: column;
   width: 100%;
   min-width: 900px;
-  background-color
-: #fff;
+  background-color: #fff;
   margin-bottom: 50px;
   border-radius: 5px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
 .title {
   font-size: 30px;
   width: 100%;
@@ -610,10 +758,11 @@ export default {
 
 .charts-container {
   width: 100%;
+
   // height: 800px;
-    .chart {
-      width: 100%;
-    }
+  .chart {
+    width: 100%;
+  }
 
 }
 </style>
