@@ -1,7 +1,7 @@
 import axios from 'axios'
 import store from '@/store'
 import { getToken } from '@/utils/auth'
-
+import { Message } from 'element-ui'
 // create an axios instance
 const service = axios.create({
   baseURL: 'http://122.205.95.110:8088', // 'http://192.168.3.79:8082', // process.env.VUE_APP_BASE_API,// url = base url + request url
@@ -25,7 +25,7 @@ service.interceptors.request.use(
   error => {
     // do something with request error
     console.log(error) // for debug
-    // return Promise.reject(error)
+    return Promise.reject(error)
   }
 )
 
@@ -73,11 +73,11 @@ service.interceptors.response.use(
   },
   error => {
     console.log('err' + error) // for debug
-    // Message({
-    //   message: error.message,
-    //   type: 'error',
-    //   duration: 5 * 1000
-    // })
+    Message({
+      message: error.message,
+      type: 'error',
+      duration: 5 * 1000
+    })
     return Promise.reject(error)
   }
 )

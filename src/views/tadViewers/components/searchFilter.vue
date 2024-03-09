@@ -169,11 +169,17 @@ export default {
       this.filter.chrEnd = ''
     },
     submitFliter() {
+      const species = this.options.species
       const chrs = this.options.chromosome
       const cultivars = this.options.cultivar
       const softwares = this.options.software
       const tissues = this.options.tissue
       const filter = JSON.parse(JSON.stringify(this.filter)) // 修改了const filter = this.filter
+      for (let i = 0; i < species.length; ++i) {
+        if (species[i].species_ID === this.filter.species) {
+          filter.species = species[i]
+        }
+      }
       for (let i = 0; i < chrs.length; ++i) {
         if (chrs[i].cs_NAME === this.filter.chr1) {
           filter.chr1 = chrs[i]

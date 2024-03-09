@@ -1,5 +1,5 @@
 <template>
-  <el-card class="chr-container" :style="{height:allChartsHeight + 'px'}">
+  <el-card class="chr-container" style="height: 1400px;">
     <div class="title">HIC</div>
     <div class="charts-tools-container">
       <div class="show-selecter tool">
@@ -53,12 +53,15 @@
       </div>
     </div>
     <div class="charts-conatiner">
-      <div class="charts-over-hidder-container">
+      <!-- <div class="charts-over-hidder-container">
         <div class="chart-position-container">
           <div class="chart-container">
             <div id="chart" class="chart" />
           </div>
         </div>
+      </div> -->
+      <div class="image">
+        <img class="img" alt="">
       </div>
       <div class="gene-container">
         <div id="gene" class="gene" :style="{height: geneHeight + 'px'}" />
@@ -69,8 +72,10 @@
 
 <script>
 /* eslint-disable */ 
+import axios from 'axios'
 import * as echarts from 'echarts'
-import { hicResult } from '@/api/tad'
+// import { hicResult } from '@/api/tad'
+// import { hicPicture } from '@/api/tad'
 import { geneResult } from '@/api/gene'
 import { setTimeout } from 'timers';
 // const { v4: uuidv4 } = require('uuid');
@@ -92,7 +97,7 @@ export default {
       downloadWidth: 700,
       geneHeight: 100, // 动态调整为 100 * 个数
       maxYRange: 1.6, // 动态调整为最大的+0.6
-      allChartsHeight: 900, // 动态调整为800 + geneHeight
+      allChartsHeight: 1400+geneHeight*2, // 动态调整为800 + geneHeight
       singleGenes: [], // 直线们 层 开始 结束
       singleArrows: [], // 箭头们 x y 方向
       exons: [], // 层 开始x 结束x 信息
@@ -287,286 +292,286 @@ export default {
     changeMaxColor(val) {
       this.maxColor = val
       if (val === null) return
-      this.handleData()
+      // this.handleData()
     },
     // 改变最小值的颜色
     changeMinColor(val) {
       this.minColor = val
       if (val === null) return
-      this.handleData()
+      // this.handleData()
     },
-    interpolateColorFn(value, minValue, maxValue, startColor, endColor) {
-      // 将值限制在最小值和最大值之间
-      const clampedValue = Math.max(Math.min(value, maxValue), minValue)
+    // interpolateColorFn(value, minValue, maxValue, startColor, endColor) {
+    //   // 将值限制在最小值和最大值之间
+    //   const clampedValue = Math.max(Math.min(value, maxValue), minValue)
 
-      // 计算值在最小值和最大值之间的比例
-      const ratio = (clampedValue - minValue) / (maxValue - minValue)
+    //   // 计算值在最小值和最大值之间的比例
+    //   const ratio = (clampedValue - minValue) / (maxValue - minValue)
 
-      // 提取起始颜色的RGB值
-      const startRed = parseInt(startColor.substr(1, 2), 16)
-      const startGreen = parseInt(startColor.substr(3, 2), 16)
-      const startBlue = parseInt(startColor.substr(5, 2), 16)
+    //   // 提取起始颜色的RGB值
+    //   const startRed = parseInt(startColor.substr(1, 2), 16)
+    //   const startGreen = parseInt(startColor.substr(3, 2), 16)
+    //   const startBlue = parseInt(startColor.substr(5, 2), 16)
 
-      // 提取结束颜色的RGB值
-      const endRed = parseInt(endColor.substr(1, 2), 16)
-      const endGreen = parseInt(endColor.substr(3, 2), 16)
-      const endBlue = parseInt(endColor.substr(5, 2), 16)
+    //   // 提取结束颜色的RGB值
+    //   const endRed = parseInt(endColor.substr(1, 2), 16)
+    //   const endGreen = parseInt(endColor.substr(3, 2), 16)
+    //   const endBlue = parseInt(endColor.substr(5, 2), 16)
 
-      // 计算插值后的RGB值
-      const interpolatedRed = Math.round(startRed + (endRed - startRed) * ratio)
-      const interpolatedGreen = Math.round(startGreen + (endGreen - startGreen) * ratio)
-      const interpolatedBlue = Math.round(startBlue + (endBlue - startBlue) * ratio)
+    //   // 计算插值后的RGB值
+    //   const interpolatedRed = Math.round(startRed + (endRed - startRed) * ratio)
+    //   const interpolatedGreen = Math.round(startGreen + (endGreen - startGreen) * ratio)
+    //   const interpolatedBlue = Math.round(startBlue + (endBlue - startBlue) * ratio)
 
-      // 将插值后的RGB值转换为十六进制表示的颜色值
-      const interpolatedColor = `#${interpolatedRed.toString(16).padStart(2, '0')}${interpolatedGreen.toString(16).padStart(2, '0')}${interpolatedBlue.toString(16).padStart(2, '0')}`
+    //   // 将插值后的RGB值转换为十六进制表示的颜色值
+    //   const interpolatedColor = `#${interpolatedRed.toString(16).padStart(2, '0')}${interpolatedGreen.toString(16).padStart(2, '0')}${interpolatedBlue.toString(16).padStart(2, '0')}`
 
-      return interpolatedColor
-    },
+    //   return interpolatedColor
+    // },
     // 画图
-    async renderChart(chartName) {
-      const vm = this
-      const option = {
-        animation: false,
-        grid: {
-          left: 0,
-          top: 0,
-          // containLabel: true,
-          width: 600,
-          height: 600
-        },
-        xAxis: {
-          type: 'value',
-          max: vm.axiosRange.maxX,
-          show: false,
-          interval: this.resolution
-        },
-        yAxis: {
-          type: 'value',
-          show: false,
-          max: vm.axiosRange.maxY,
-          interval: this.resolution
-        },
-        series: [
-          {
-            type: 'custom',
-            renderItem: function(params, api) {
-              var xStart = api.value(0)
-              var xEnd = api.value(1)
-              var yStart = api.value(3)
-              var yEnd = api.value(2)
-              var start = api.coord([xStart, yStart])
-              var size = api.size([xEnd - xStart, Math.abs(yEnd - yStart)])
-              var style = api.style()
+    // async renderChart(chartName) {
+    //   const vm = this
+    //   const option = {
+    //     animation: false,
+    //     grid: {
+    //       left: 0,
+    //       top: 0,
+    //       // containLabel: true,
+    //       width: 600,
+    //       height: 600
+    //     },
+    //     xAxis: {
+    //       type: 'value',
+    //       max: vm.axiosRange.maxX,
+    //       show: false,
+    //       interval: this.resolution
+    //     },
+    //     yAxis: {
+    //       type: 'value',
+    //       show: false,
+    //       max: vm.axiosRange.maxY,
+    //       interval: this.resolution
+    //     },
+    //     series: [
+    //       {
+    //         type: 'custom',
+    //         renderItem: function(params, api) {
+    //           var xStart = api.value(0)
+    //           var xEnd = api.value(1)
+    //           var yStart = api.value(3)
+    //           var yEnd = api.value(2)
+    //           var start = api.coord([xStart, yStart])
+    //           var size = api.size([xEnd - xStart, Math.abs(yEnd - yStart)])
+    //           var style = api.style()
 
-              // 处理颜色
-              const interpolatedColor = vm.interpolateColorFn(api.value(4), vm.minVals, vm.maxVals, vm.minColor, vm.maxColor)
-              style.fill = interpolatedColor
+    //           // 处理颜色
+    //           const interpolatedColor = vm.interpolateColorFn(api.value(4), vm.minVals, vm.maxVals, vm.minColor, vm.maxColor)
+    //           style.fill = interpolatedColor
 
-              return {
-                type: 'rect',
-                shape: {
-                  x: start[0],
-                  y: start[1],
-                  width: size[0],
-                  height: size[1]
-                },
-                style: style
-              }
-            },
-            data: this.hicData
-          },
-          {
-            type: 'line',
-            data: [[this.axiosRange.minX, this.axiosRange.minY], [this.axiosRange.maxX, this.axiosRange.maxY]], // 左下角到右上角的起始和结束点
-            showSymbol: false,
-            lineStyle: {
-              color: '#000',
-              cap: 'round'
-            },
-            animation: false // 禁用直线的动画效果
-          },
-          {
-            type: 'line',
-            data: [[this.axiosRange.minX, this.axiosRange.minY], [this.axiosRange.minX, this.axiosRange.maxY]], // 边框线
-            showSymbol: false,
-            lineStyle: {
-              color: '#000',
-              cap: 'round'
-            },
-            animation: false // 禁用直线的动画效果
-          },
-          {
-            type: 'line',
-            data: [[this.axiosRange.minX, this.axiosRange.maxY], [this.axiosRange.maxX, this.axiosRange.maxY]], // 边框线
-            showSymbol: false,
-            lineStyle: {
-              color: '#000',
-              cap: 'round'
-            },
-            animation: false // 禁用直线的动画效果
-          }
-        ]
-      }
-      await echarts.init(document.querySelector(chartName), 'lignt', {
-        renderer: 'svg' // 指定渲染器为SVG
-      }).setOption(option)
-      this.loading = false
-    },
+    //           return {
+    //             type: 'rect',
+    //             shape: {
+    //               x: start[0],
+    //               y: start[1],
+    //               width: size[0],
+    //               height: size[1]
+    //             },
+    //             style: style
+    //           }
+    //         },
+    //         data: this.hicData
+    //       },
+    //       {
+    //         type: 'line',
+    //         data: [[this.axiosRange.minX, this.axiosRange.minY], [this.axiosRange.maxX, this.axiosRange.maxY]], // 左下角到右上角的起始和结束点
+    //         showSymbol: false,
+    //         lineStyle: {
+    //           color: '#000',
+    //           cap: 'round'
+    //         },
+    //         animation: false // 禁用直线的动画效果
+    //       },
+    //       {
+    //         type: 'line',
+    //         data: [[this.axiosRange.minX, this.axiosRange.minY], [this.axiosRange.minX, this.axiosRange.maxY]], // 边框线
+    //         showSymbol: false,
+    //         lineStyle: {
+    //           color: '#000',
+    //           cap: 'round'
+    //         },
+    //         animation: false // 禁用直线的动画效果
+    //       },
+    //       {
+    //         type: 'line',
+    //         data: [[this.axiosRange.minX, this.axiosRange.maxY], [this.axiosRange.maxX, this.axiosRange.maxY]], // 边框线
+    //         showSymbol: false,
+    //         lineStyle: {
+    //           color: '#000',
+    //           cap: 'round'
+    //         },
+    //         animation: false // 禁用直线的动画效果
+    //       }
+    //     ]
+    //   }
+    //   await echarts.init(document.querySelector(chartName), 'lignt', {
+    //     renderer: 'svg' // 指定渲染器为SVG
+    //   }).setOption(option)
+    //   this.loading = false
+    // },
     // 处理数据
-    async handleData() {
-      this.loading = true
+    // async handleData() {
+    //   this.loading = true
 
-      const filter = this.$attrs.filter
+    //   const filter = this.$attrs.filter
 
-      const range = {
-        binXStart: filter.chrStart / 1000000 ,
-        binXEnd: filter.chrEnd / 1000000 ,
-        binYStart: filter.chrStart / 1000000 ,
-        binYEnd: filter.chrEnd / 1000000 
-      }
+    //   const range = {
+    //     binXStart: filter.chrStart / 1000000 ,
+    //     binXEnd: filter.chrEnd / 1000000 ,
+    //     binYStart: filter.chrStart / 1000000 ,
+    //     binYEnd: filter.chrEnd / 1000000 
+    //   }
 
-      // const uuid = uuidv4()
+    //   // const uuid = uuidv4()
      
-      /* eslint-disable */
-      const vm = this // 赶时间 就这么写吧
-      const res = []
-      async function pollData(uid) {
-        range.uuid = uid
-        // const { data, code } = await hicResult(filter.chromosome.cs_ID, range)
-        // const { data, code } = await hicResult(1089, range)
-        console.log('range', range)
-        const { data, code } = await hicResult(filter.chr1.cs_ID, filter.tissue.tissue_ID, range)
+    //   /* eslint-disable */
+    //   const vm = this // 赶时间 就这么写吧
+    //   const res = []
+    //   async function pollData(uid) {
+    //     range.uuid = uid
+    //     // const { data, code } = await hicResult(filter.chromosome.cs_ID, range)
+    //     // const { data, code } = await hicResult(1089, range)
+    //     console.log('range', range)
+    //     const { data, code } = await hicResult(filter.chr1.cs_ID, filter.tissue.tissue_ID, range)
 
-        if (data === null) {
-          console.log('轮询结束')
-          console.log(res)
+    //     if (data === null) {
+    //       console.log('轮询结束')
+    //       console.log(res)
 
-          res.forEach(item => {
-            vm.hicData.push([item.genomeX, item.genomeX + vm.resolution, item.genomeY, item.genomeY + vm.resolution, item.counts])
-          })
+    //       res.forEach(item => {
+    //         vm.hicData.push([item.genomeX, item.genomeX + vm.resolution, item.genomeY, item.genomeY + vm.resolution, item.counts])
+    //       })
 
-          // 找大值小值 直接用扩展符号就堆栈溢出了
-          const xStart = vm.hicData.map(item => item[0])
-          const xEnd = vm.hicData.map(item => item[1])
-          const yStart = vm.hicData.map(item => item[2])
-          const yEnd = vm.hicData.map(item => item[3])
-          const chartVals = vm.hicData.map(item => item[4])
-          const xAxios = [...xStart, ...xEnd]
-          const yAxios = [...yStart, ...yEnd]
-          let maxX = xAxios[0]
-          let minX = xAxios[0]
-          let maxY = yAxios[0]
-          let minY = yAxios[0]
+    //       // 找大值小值 直接用扩展符号就堆栈溢出了
+    //       const xStart = vm.hicData.map(item => item[0])
+    //       const xEnd = vm.hicData.map(item => item[1])
+    //       const yStart = vm.hicData.map(item => item[2])
+    //       const yEnd = vm.hicData.map(item => item[3])
+    //       const chartVals = vm.hicData.map(item => item[4])
+    //       const xAxios = [...xStart, ...xEnd]
+    //       const yAxios = [...yStart, ...yEnd]
+    //       let maxX = xAxios[0]
+    //       let minX = xAxios[0]
+    //       let maxY = yAxios[0]
+    //       let minY = yAxios[0]
 
-          for (let i = 1; i < xAxios.length; i++) {
-            if (xAxios[i] > maxX) {
-              maxX = xAxios[i]
-            }
-            if (xAxios[i] < minX) {
-              minX = xAxios[i]
-            }
-            if (yAxios[i] > maxY) {
-              maxY = yAxios[i]
-            }
-            if (yAxios[i] < minY) {
-              minY = yAxios[i]
-            }
-          }
+    //       for (let i = 1; i < xAxios.length; i++) {
+    //         if (xAxios[i] > maxX) {
+    //           maxX = xAxios[i]
+    //         }
+    //         if (xAxios[i] < minX) {
+    //           minX = xAxios[i]
+    //         }
+    //         if (yAxios[i] > maxY) {
+    //           maxY = yAxios[i]
+    //         }
+    //         if (yAxios[i] < minY) {
+    //           minY = yAxios[i]
+    //         }
+    //       }
 
-          vm.axiosRange.maxX = maxX
-          vm.axiosRange.minX = minX
-          vm.axiosRange.maxY = maxY
-          vm.axiosRange.minY = minY
-          let minVal = chartVals[0]
-          let maxVal = chartVals[0]
+    //       vm.axiosRange.maxX = maxX
+    //       vm.axiosRange.minX = minX
+    //       vm.axiosRange.maxY = maxY
+    //       vm.axiosRange.minY = minY
+    //       let minVal = chartVals[0]
+    //       let maxVal = chartVals[0]
 
-          for (let i = 1; i < chartVals.length; i++) {
-            if (chartVals[i] < minVal) {
-              minVal = chartVals[i]
-            }
-            if (chartVals[i] > maxVal) {
-              maxVal = chartVals[i]
-            }
-          }
+    //       for (let i = 1; i < chartVals.length; i++) {
+    //         if (chartVals[i] < minVal) {
+    //           minVal = chartVals[i]
+    //         }
+    //         if (chartVals[i] > maxVal) {
+    //           maxVal = chartVals[i]
+    //         }
+    //       }
 
-          vm.minVals = minVal
-          vm.maxVals = maxVal
+    //       vm.minVals = minVal
+    //       vm.maxVals = maxVal
 
-          // vm.hicData = vm.hicData.filter(item => item[0] + item[3] <= Math.max(vm.axiosRange.maxX, vm.axiosRange.maxY))
+    //       // vm.hicData = vm.hicData.filter(item => item[0] + item[3] <= Math.max(vm.axiosRange.maxX, vm.axiosRange.maxY))
 
-          console.log('res:', res)
-          await vm.renderChart('#chart')
-          return
-        } else if (code === 202 && data !== null) {
-          res.push(...data.matrixPoints)
-          console.log('轮询结束')
-          console.log(res)
+    //       console.log('res:', res)
+    //       await vm.renderChart('#chart')
+    //       return
+    //     } else if (code === 202 && data !== null) {
+    //       res.push(...data.matrixPoints)
+    //       console.log('轮询结束')
+    //       console.log(res)
 
-          res.forEach(item => {
-            vm.hicData.push([item.genomeX, item.genomeX + vm.resolution, item.genomeY, item.genomeY + vm.resolution, item.counts])
-          })
+    //       res.forEach(item => {
+    //         vm.hicData.push([item.genomeX, item.genomeX + vm.resolution, item.genomeY, item.genomeY + vm.resolution, item.counts])
+    //       })
 
-          // 找大值小值 直接用扩展符号就堆栈溢出了
-          const xStart = vm.hicData.map(item => item[0])
-          const xEnd = vm.hicData.map(item => item[1])
-          const yStart = vm.hicData.map(item => item[2])
-          const yEnd = vm.hicData.map(item => item[3])
-          const chartVals = vm.hicData.map(item => item[4])
-          const xAxios = [...xStart, ...xEnd]
-          const yAxios = [...yStart, ...yEnd]
-          let maxX = xAxios[0]
-          let minX = xAxios[0]
-          let maxY = yAxios[0]
-          let minY = yAxios[0]
+    //       // 找大值小值 直接用扩展符号就堆栈溢出了
+    //       const xStart = vm.hicData.map(item => item[0])
+    //       const xEnd = vm.hicData.map(item => item[1])
+    //       const yStart = vm.hicData.map(item => item[2])
+    //       const yEnd = vm.hicData.map(item => item[3])
+    //       const chartVals = vm.hicData.map(item => item[4])
+    //       const xAxios = [...xStart, ...xEnd]
+    //       const yAxios = [...yStart, ...yEnd]
+    //       let maxX = xAxios[0]
+    //       let minX = xAxios[0]
+    //       let maxY = yAxios[0]
+    //       let minY = yAxios[0]
 
-          for (let i = 1; i < xAxios.length; i++) {
-            if (xAxios[i] > maxX) {
-              maxX = xAxios[i]
-            }
-            if (xAxios[i] < minX) {
-              minX = xAxios[i]
-            }
-            if (yAxios[i] > maxY) {
-              maxY = yAxios[i]
-            }
-            if (yAxios[i] < minY) {
-              minY = yAxios[i]
-            }
-          }
+    //       for (let i = 1; i < xAxios.length; i++) {
+    //         if (xAxios[i] > maxX) {
+    //           maxX = xAxios[i]
+    //         }
+    //         if (xAxios[i] < minX) {
+    //           minX = xAxios[i]
+    //         }
+    //         if (yAxios[i] > maxY) {
+    //           maxY = yAxios[i]
+    //         }
+    //         if (yAxios[i] < minY) {
+    //           minY = yAxios[i]
+    //         }
+    //       }
 
-          vm.axiosRange.maxX = maxX
-          vm.axiosRange.minX = minX
-          vm.axiosRange.maxY = maxY
-          vm.axiosRange.minY = minY
-          let minVal = chartVals[0]
-          let maxVal = chartVals[0]
+    //       vm.axiosRange.maxX = maxX
+    //       vm.axiosRange.minX = minX
+    //       vm.axiosRange.maxY = maxY
+    //       vm.axiosRange.minY = minY
+    //       let minVal = chartVals[0]
+    //       let maxVal = chartVals[0]
 
-          for (let i = 1; i < chartVals.length; i++) {
-            if (chartVals[i] < minVal) {
-              minVal = chartVals[i]
-            }
-            if (chartVals[i] > maxVal) {
-              maxVal = chartVals[i]
-            }
-          }
+    //       for (let i = 1; i < chartVals.length; i++) {
+    //         if (chartVals[i] < minVal) {
+    //           minVal = chartVals[i]
+    //         }
+    //         if (chartVals[i] > maxVal) {
+    //           maxVal = chartVals[i]
+    //         }
+    //       }
 
-          vm.minVals = minVal
-          vm.maxVals = maxVal
+    //       vm.minVals = minVal
+    //       vm.maxVals = maxVal
 
-          // vm.hicData = vm.hicData.filter(item => item[0] + item[3] <= Math.max(vm.axiosRange.maxX, vm.axiosRange.maxY))
-          console.log('res:', res)
-          await vm.renderChart('#chart')
-          return
-        }
-        const nextUid = data.uuid === null ? '' : data.uuid
+    //       // vm.hicData = vm.hicData.filter(item => item[0] + item[3] <= Math.max(vm.axiosRange.maxX, vm.axiosRange.maxY))
+    //       console.log('res:', res)
+    //       await vm.renderChart('#chart')
+    //       return
+    //     }
+    //     const nextUid = data.uuid === null ? '' : data.uuid
 
-        res.push(...data.matrixPoints)
-        if (code === 200) {
-          setTimeout(() => pollData(nextUid), 5000)
-        }
-      }
-      await pollData('')
-    },
+    //     res.push(...data.matrixPoints)
+    //     if (code === 200) {
+    //       setTimeout(() => pollData(nextUid), 5000)
+    //     }
+    //   }
+    //   await pollData('')
+    // },
     // 主动调用下载
     async downloadCharts() {
       console.log()
@@ -640,7 +645,6 @@ export default {
     },
     async handleGeneData() {
       const filter = this.$attrs.filter
-      console.log('xdsxd', filter)
       this.singleGenes = []
       this.singleArrows = []
       this.exons = []
@@ -651,7 +655,7 @@ export default {
         start: filter.chrStart,
         end: filter.chrEnd
       }
-      const response = await geneResult(filter.chromosome.cs_ID, range)
+      const response = await geneResult(filter.chr1.cs_ID, range)
       const { data } = response
       if (data === null) {
         this.$message('查询不到RNA数据')
@@ -678,6 +682,40 @@ export default {
       this.geneHeight = 100 * geneLevels
       this.maxYRange = geneLevels === 1 ? 0.8 : geneLevels + 0.6
       this.allChartsHeight = 800 + this.geneHeight
+    },
+    async hicPicture(species, cultivar, tissue, chr) {
+      return axios.get('http://122.205.95.110:8088/hic/generateHeatmap', {
+        responseType: 'blob',
+        params: {
+          species: species,
+          cultivar: cultivar,
+          tissue: tissue,
+          chromosome: chr
+        }
+      }).then((res) => {
+        const reader = new FileReader(); //创建一个FileReader实例
+    reader.readAsText(res.data, "utf-8"); //读取文件,结果用字符串形式表示
+    reader.onload = () => {
+      //读取完成后,获取reader.result
+      try {
+        const msg = JSON.parse(reader.result); //这一步报错则返回的是二进制流图片，不报错则返回的是JSON的错误提示数据
+        console.log(msg); //msg为转换后的JSON数据
+      } catch {
+        const objectURL = window.URL.createObjectURL(res.data);
+        const imgDom = document.querySelector('.img');
+        imgDom.src = objectURL;
+        imgDom.height=600;
+        imgDom.width=900;
+      }
+    };
+      }).catch((err) => {
+        console.log(err)
+      })
+    },
+    async makeHicCharts() {
+      const filter = this.$attrs.filter
+      await this.hicPicture(filter.species.species_NAME, filter.cultivar.cultivar_NAME, filter.tissue.tissue_NAME, filter.chr1.cs_NAME)
+      console.log('成功')
     },
     makeGeneCharts() {
       const vm = this
@@ -753,9 +791,10 @@ export default {
       chart.setOption(option)
     },
     async makeCharts() {
-      await echarts.dispose(document.querySelector('.chart'))
+      // await echarts.dispose(document.querySelector('.chart'))
       await echarts.dispose(document.querySelector('.gene'))
-      await this.handleData()
+      // await this.handleData()
+      await this.makeHicCharts()
       await this.handleGeneData()
       await this.makeGeneCharts()
     }
@@ -833,31 +872,42 @@ export default {
   }
 }
 
-.chart-position-container {
-  position: relative;
-  right: 30px;
-  width: 700px;
-  height: 700px;
+// .chart-position-container {
+//   position: relative;
+//   right: 30px;
+//   width: 700px;
+//   height: 700px;
 
-  .chart-container {
-    position: relative;
-    width: 700px;
-    height: 100%;
-    transform: rotate(45deg);
-    .chart {
-      position: absolute;
-      top:50%;
-      left: 50%;
-      height: 600px;
-      width: 600px;
-      transform: translate(-50%, -50%);
-    }
-  }
-}
+//   .chart-container {
+//     position: relative;
+//     width: 700px;
+//     height: 100%;
+//     transform: rotate(45deg);
+//     .chart {
+//       position: absolute;
+//       top:50%;
+//       left: 50%;
+//       height: 600px;
+//       width: 600px;
+//       transform: translate(-50%, -50%);
+//     }
+//   }
+// }
 .gene-container {
   position: absolute;
-  top: 280px;
+  top: 80px;
   width: 850px;
+}
+
+.image{
+  position: relative;
+  top: -160px;
+  // right: 30px;
+  width: 900px;
+  height: 600px;
+  // background-color: aqua;
+  .img{
+  }
 }
 
 </style>

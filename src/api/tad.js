@@ -6,3 +6,5 @@ export function hicResult(cs_id1, tissue_id, params) {
     params
   })
 }
+
+

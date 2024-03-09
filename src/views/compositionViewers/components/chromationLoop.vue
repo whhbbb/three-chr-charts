@@ -114,7 +114,7 @@ export default {
           const direction = arrow[2] > 0 ? 35 : 0.5
           if (pos[0] <= startPosition || pos[0] >= endPosition) {
             show = false
-          }
+          }          
           // 绘制箭头
           return {
             invisible: !show,

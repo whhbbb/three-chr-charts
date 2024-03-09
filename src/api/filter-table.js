@@ -14,16 +14,16 @@ export function dropDownCultivarAll() {
   })
 }
 // 根据物种查找品种
-export function dropDownCultivar(speciesId) {
+export function dropDownCultivar(speciesName) {
   return request({
-    url: `/option/cultivar/id/${speciesId}`
+    url: `/option/cultivar/species/${speciesName}`
   })
 }
 
 // 根据品种查找所有组织
-export function dropDownTissue(cultivarId) {
+export function dropDownTissue(speciesName,cultivarName) {
   return request({
-    url: `/option/tissue/${cultivarId}`
+    url: `/option/tissue/${speciesName}/${cultivarName}`
   })
 }
 // 查找所有软件
@@ -40,8 +40,39 @@ export function dropDownChromosomeAll() {
   })
 }
 // 根据品种查找染色体
-export function dropDownChromosome(cultivarId) {
+export function dropDownChromosome(speciesName,cultivarName) {
   return request({
-    url: `/option/chromosome/id/${cultivarId}`
+    url: `/option/chromosome/${speciesName}/${cultivarName}`
+  })
+}
+// 获取显示类型选项
+export function dropDownDisplayType(params) {
+  return request({
+    url: '/hic/getDisplayOption',
+    params
+  })
+}
+
+// 获取可行的标准化类型
+export function dropDownNormalizationType(params) {
+  return request({
+    url: '/hic/getNormalizationType',
+    params
+  })
+}
+
+// 获得热图上的点的信息
+export function getHeatmapPointInfo(params) {
+  return request({
+    url: '/hic/getHeatMapPoint',
+    params
+  })
+}
+
+// 获取品种支持的软件
+export function dropDownKindSoftware(params) {
+  return request({
+    url: '/option/software',
+    params
   })
 }
